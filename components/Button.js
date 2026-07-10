@@ -1,8 +1,9 @@
 "use client"
-import React, { memo, useState } from "react"
+import React, { useState } from "react"
+import styles from "./Login.module.css"
 import { useRouter } from "next/navigation"
 
-const Button = memo(({ flex, btn, width, inp = true, onClick = null }) => {
+const Login = ({ flex, btn, width, color, inp=true, onClick=null }) => {
   const [uInput, setUInput] = useState("")
   const router = useRouter()
 
@@ -11,7 +12,7 @@ const Button = memo(({ flex, btn, width, inp = true, onClick = null }) => {
   }
 
   const handleClick = () => {
-    if (onClick) {
+    if(onClick){
       onClick()
       return
     }
@@ -33,12 +34,15 @@ const Button = memo(({ flex, btn, width, inp = true, onClick = null }) => {
 
       <button
         onClick={handleClick}
-        className="cursor-pointer bg-purple-700 px-10 flex items-center justify-center font-bold rounded-lg h-10 py-3 glow-on-hover"
+        className={`bg-[#5522cc] cursor-pointer px-10 flex items-center justify-center font-bold rounded-lg h-10 py-3 ${
+          color === "animate" && styles.glowonhover
+        }`}
+        style={{ backgroundColor: color }}
       >
         {btn}
       </button>
     </div>
   )
-})
+}
 
-export default Button
+export default Login

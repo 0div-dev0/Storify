@@ -1,18 +1,15 @@
-import { withAuth } from 'next-auth/middleware'
+import {withAuth} from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
 
-const protectedPaths = ['/home', '/journal', '/explore', '/settings']
-
-function isProtected(pathname) {
-  return protectedPaths.some(p => pathname.startsWith(p))
-}
-
 export default withAuth(
-  function middleware(req) {
+  function proxy(req) {
     const token = req.nextauth.token
     const path = req.nextUrl.pathname
 
-    if (isProtected(path) && !token) {
+    const protectedPaths = ['/home', '/journal', '/explore', '/settings']
+    const isProtected = protectedPaths.some(p => path.startsWith(p))
+
+    if (isProtected && !token) {
       const loginUrl = new URL('/login', req.url)
       loginUrl.searchParams.set('callbackUrl', path)
       return NextResponse.redirect(loginUrl)
@@ -28,7 +25,10 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname
-        if (isProtected(path)) {
+        const protectedPaths = ['/home', '/journal', '/explore', '/settings']
+        const isProtected = protectedPaths.some(p => path.startsWith(p))
+        
+        if (isProtected) {
           return !!token
         }
         return true
@@ -38,11 +38,5 @@ export default withAuth(
 )
 
 export const config = {
-  matcher: [
-    '/home/:path*',
-    '/journal/:path*',
-    '/explore/:path*',
-    '/settings/:path*',
-    '/login',
-  ],
+  matcher: ['/home/:path*', '/journal/:path*', '/explore/:path*', '/settings/:path*', '/login'],
 }

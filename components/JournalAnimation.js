@@ -5,10 +5,10 @@ import { FaPenNib } from "react-icons/fa";
 
 const paragraphs = [
   "February 7",
-  "Today was slow, and I let it be. I felt mentally tired, eased into the morning, and didn't rush.",
+  "Today was slow, and I let it be. I felt mentally tired, eased into the morning, and didn’t rush.",
   "Guilt showed up, but I reminded myself that rest matters and not every day has to shine.",
-  "I finished one thing I'd been avoiding—imperfect but done—and that was enough.",
-  "Tonight, I'm hoping for calmer sleep and an honest tomorrow."
+  "I finished one thing I’d been avoiding—imperfect but done—and that was enough.",
+  "Tonight, I’m hoping for calmer sleep and an honest tomorrow."
 ]
 
 const JournalAnimation = () => {
