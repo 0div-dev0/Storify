@@ -58,12 +58,12 @@ const Navbar = () => {
   // neither the "logged in" nor the "logged out" state flashes.
   if (status === 'loading') {
     return (
-      <nav className="flex px-4 md:px-15 py-3 md:py-4 items-center justify-between w-full min-h-[64px] md:min-h-[72px] bg-gray-950/90 backdrop-blur-md border-b border-white/5 sticky top-0 z-40">
-        <div className="flex items-center justify-between w-full animate-pulse">
-          <div className="w-12 h-8 rounded-lg bg-white/5" />
-          <div className="flex gap-3 items-center">
-            <div className="hidden md:block w-40 h-8 rounded-lg bg-white/5" />
-            <div className="w-28 h-8 rounded-xl bg-white/5" />
+      <nav className="flex px-4 md:px-15 py-3 md:py-4 items-center justify-between w-full min-h-[64px] md:min-h-[72px] bg-gray-950/90 backdrop-blur-md border-b border-white/5 sticky top-0 z-40 min-w-0">
+        <div className="flex items-center justify-between w-full min-w-0 animate-pulse">
+          <div className="w-12 h-8 rounded-lg bg-white/5 flex-shrink-0" />
+          <div className="flex gap-3 items-center min-w-0">
+            <div className="hidden md:block w-40 h-8 rounded-lg bg-white/5 flex-shrink-0" />
+            <div className="w-28 h-8 rounded-xl bg-white/5 flex-shrink-0" />
           </div>
         </div>
       </nav>
@@ -72,7 +72,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="flex px-4 md:px-15 py-3 md:py-4 items-center justify-between w-full min-h-[64px] md:min-h-[72px] bg-gray-950/90 backdrop-blur-md border-b border-white/5 sticky top-0 z-40">
+      <nav className="flex px-4 md:px-15 py-3 md:py-4 items-center justify-between w-full min-h-[64px] md:min-h-[72px] bg-gray-950/95 backdrop-blur-md border-b border-white/5 sticky top-0 z-50 min-w-0">
         {/* LOGGED IN STATE */}
         {logged && (
           <div className="flex items-center justify-between w-full">

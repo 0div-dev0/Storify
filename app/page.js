@@ -5,14 +5,11 @@ import Hero from "@/components/Hero";
 import GreatSeperator from "@/components/GreatSeperator";
 
 export default function DashboardPage() {
-
-  return(
-    <>
-    <Navbar/>
-    {/* <GreatSeperator/> */}
-    <Hero/>
-
-    </>
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      {/* <GreatSeperator/> */}
+      <Hero />
+    </div>
   );
-    
 }

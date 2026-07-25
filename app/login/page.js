@@ -97,7 +97,7 @@ function LoginContent() {
     };
 
     return (
-        <div className="min-h-screen bg-[#020617] text-white selection:bg-indigo-500/30 overflow-hidden relative">
+        <div className="flex flex-col min-h-screen bg-[#020617] text-white selection:bg-indigo-500/30 relative">
             {/* Background elements */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[120px]" />
@@ -106,7 +106,7 @@ function LoginContent() {
 
             <Navbar />
 
-            <main className="relative flex min-h-[calc(100vh-80px)] w-full items-center justify-center p-6">
+            <main className="flex-1 flex items-center justify-center p-6 w-full">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
