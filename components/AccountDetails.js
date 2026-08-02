@@ -211,7 +211,7 @@ const AccountDetails = memo(function AccountDetails({ email }) {
               <IoCalendarOutline size={14} /> Time Period
             </label>
             {/* Presets Row */}
-            <div className="grid grid-cols-4 gap-1.5 mt-1">
+            <div className="grid grid-cols-4 gap-1.5 mt-1" role="group" aria-label="Time period presets">
               {PRESETS.map((p) => (
                 <button
                   key={p.id}
@@ -221,6 +221,8 @@ const AccountDetails = memo(function AccountDetails({ email }) {
                       ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
                       : 'bg-transparent text-slate-400 border-white/5 hover:text-white hover:bg-white/5'
                   }`}
+                  aria-pressed={activePreset === p.id}
+                  aria-label={`Set time period to ${p.label}`}
                 >
                   {p.label}
                 </button>
@@ -230,8 +232,11 @@ const AccountDetails = memo(function AccountDetails({ email }) {
             {/* Custom Dates Inputs */}
             <div className="grid grid-cols-2 gap-3 mt-2">
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] text-slate-500 font-medium">Start Date</span>
+                <label htmlFor="start-date" className="text-[10px] text-slate-400 font-medium">
+                  Start Date
+                </label>
                 <input
+                  id="start-date"
                   type="date"
                   value={startDate}
                   onChange={(e) => handleDateChange('start', e.target.value)}
@@ -239,8 +244,11 @@ const AccountDetails = memo(function AccountDetails({ email }) {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] text-slate-500 font-medium">End Date</span>
+                <label htmlFor="end-date" className="text-[10px] text-slate-400 font-medium">
+                  End Date
+                </label>
                 <input
+                  id="end-date"
                   type="date"
                   value={endDate}
                   onChange={(e) => handleDateChange('end', e.target.value)}
@@ -255,7 +263,7 @@ const AccountDetails = memo(function AccountDetails({ email }) {
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
               <IoAnalyticsOutline size={14} /> Output Format
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3" role="group" aria-label="Output format">
               {/* Feedback Button */}
               <button
                 onClick={() => setMode('feedback')}
@@ -264,11 +272,13 @@ const AccountDetails = memo(function AccountDetails({ email }) {
                     ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/40'
                     : 'bg-transparent text-slate-400 border-white/5 hover:text-white hover:bg-white/5'
                 }`}
+                aria-pressed={mode === 'feedback'}
+                aria-label="Select feedback-based analysis format"
               >
                 <span className="text-xs font-bold flex items-center gap-1">
-                  <IoAnalyticsOutline size={12} /> Feedback-Based
+                  <IoAnalyticsOutline size={12} aria-hidden="true" /> Feedback-Based
                 </span>
-                <span className="text-[9px] text-slate-500 leading-normal">
+                <span className="text-[9px] text-slate-400 leading-normal">
                   Analytical habits, productivity metrics, and cognitive feedback.
                 </span>
               </button>
@@ -281,11 +291,13 @@ const AccountDetails = memo(function AccountDetails({ email }) {
                     ? 'bg-purple-500/10 text-purple-300 border-purple-500/40'
                     : 'bg-transparent text-slate-400 border-white/5 hover:text-white hover:bg-white/5'
                 }`}
+                aria-pressed={mode === 'story'}
+                aria-label="Select story format"
               >
                 <span className="text-xs font-bold flex items-center gap-1">
-                  <IoSparklesOutline size={12} /> Story Form
+                  <IoSparklesOutline size={12} aria-hidden="true" /> Story Form
                 </span>
-                <span className="text-[9px] text-slate-500 leading-normal">
+                <span className="text-[9px] text-slate-400 leading-normal">
                   Turn journal timelines into structured daily narrative stories.
                 </span>
               </button>
@@ -297,7 +309,7 @@ const AccountDetails = memo(function AccountDetails({ email }) {
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
               Length of Output
             </label>
-            <div className="grid grid-cols-3 gap-2 mt-1">
+            <div className="grid grid-cols-3 gap-2 mt-1" role="group" aria-label="Output length">
               {['short', 'medium', 'long'].map((l) => (
                 <button
                   key={l}
@@ -307,6 +319,8 @@ const AccountDetails = memo(function AccountDetails({ email }) {
                       ? 'bg-white/10 text-white border-white/30'
                       : 'bg-transparent text-slate-400 border-white/5 hover:text-white hover:bg-white/5'
                   }`}
+                  aria-pressed={length === l}
+                  aria-label={`Set output length to ${l}`}
                 >
                   {l}
                 </button>
@@ -316,17 +330,18 @@ const AccountDetails = memo(function AccountDetails({ email }) {
 
           {/* Theme parameters */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <label htmlFor="focus-theme" className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               One-liner Focus Theme
             </label>
             <input
+              id="focus-theme"
               type="text"
               value={theme}
               onChange={(e) => setTheme(e.target.value)}
               placeholder="e.g. Work stress, family ties, school exams, fitness..."
               className="bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 text-xs md:text-sm"
             />
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[10px] text-slate-400">
               The AI will craft the story or analysis around this specific element of your life.
             </p>
           </div>
@@ -336,6 +351,7 @@ const AccountDetails = memo(function AccountDetails({ email }) {
             onClick={handleGenerate}
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-md shadow-indigo-600/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm active:scale-[0.98]"
+            aria-label={loading ? 'Generating insights, please wait' : 'Generate lifestyle insights'}
           >
             {loading ? (
               <>
@@ -401,6 +417,7 @@ const AccountDetails = memo(function AccountDetails({ email }) {
               <button 
                 onClick={handleWriteEntry}
                 className="mt-2 text-xs md:text-sm font-semibold bg-white/10 hover:bg-white/15 text-white py-2 px-5 rounded-xl border border-white/10 transition-all cursor-pointer"
+                aria-label="Go write a journal entry"
               >
                 Go write a journal entry
               </button>
@@ -430,6 +447,7 @@ const AccountDetails = memo(function AccountDetails({ email }) {
                 <button
                   onClick={handleCopy}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-slate-300 hover:text-white transition-all text-xs font-semibold cursor-pointer"
+                  aria-label={copied ? 'Copied to clipboard' : 'Copy text to clipboard'}
                 >
                   {copied ? (
                     <>

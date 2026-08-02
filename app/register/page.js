@@ -108,7 +108,7 @@ export default function RegisterPage() {
                                                     message: 'Invalid email address'
                                                 }
                                             })}
-                                            className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all text-white placeholder:text-slate-600"
+                                            className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all text-white placeholder:text-slate-400"
                                             id="email"
                                             type="email"
                                             placeholder="name@example.com"
@@ -132,7 +132,7 @@ export default function RegisterPage() {
                                                     message: 'Password must be at least 6 characters'
                                                 }
                                             })}
-                                            className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all text-white placeholder:text-slate-600"
+                                            className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all text-white placeholder:text-slate-400"
                                             id="password"
                                             type="password"
                                             placeholder="••••••••"

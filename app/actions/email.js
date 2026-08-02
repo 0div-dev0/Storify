@@ -7,7 +7,7 @@ export default async function sendEmail({email, token}){
         await resend.emails.send({
           from: "onboarding@resend.dev",
           to:email,
-          subject: "Verify your email",
+          subject: "CONFIRM EMAIL- STORIFY",
           html: `
             <p>Verify your account</p>
             <a href="${process.env.NEXTAUTH_URL}/api/auth/verify?token=${token}">

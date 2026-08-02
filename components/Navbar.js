@@ -113,6 +113,7 @@ const Navbar = () => {
                     className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all cursor-pointer group"
                     aria-expanded={dropdown}
                     aria-haspopup="true"
+                    aria-label={logged ? `User menu for ${logged}` : 'User menu'}
                   >
                     <div className="w-7 h-7 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center">
                       <FaRegCircleUser size={14} className="text-indigo-400" />
@@ -121,7 +122,7 @@ const Navbar = () => {
                       {displayEmail}
                     </span>
                     <svg
-                      className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${dropdown ? 'rotate-180' : ''}`}
+                      className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${dropdown ? 'rotate-180' : ''}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -136,7 +137,7 @@ const Navbar = () => {
                       }`}
                   >
                     <div className="px-4 py-3 border-b border-white/10 bg-white/5">
-                      <p className="text-xs text-slate-500 mb-0.5">Signed in as</p>
+                      <p className="text-xs text-slate-400 mb-0.5">Signed in as</p>
                       <p className="text-sm text-white font-medium truncate">{logged}</p>
                     </div>
 
@@ -144,6 +145,7 @@ const Navbar = () => {
                       <button
                         onClick={() => setTheme(!theme)}
                         className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-all"
+                        aria-label={theme ? 'Switch to light mode' : 'Switch to dark mode'}
                       >
                         {theme ? <MdDarkMode size={16} className="text-slate-400" /> : <CiLight size={16} className="text-slate-400" />}
                         {theme ? 'Dark Mode' : 'Light Mode'}
@@ -152,6 +154,7 @@ const Navbar = () => {
                       <button
                         onClick={() => { setDropdown(false); router.push('/settings') }}
                         className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-all"
+                        aria-label="Open settings"
                       >
                         <IoSettingsOutline size={16} className="text-slate-400" />
                         Settings
@@ -162,6 +165,7 @@ const Navbar = () => {
                       <button
                         onClick={handleLogOut}
                         className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all"
+                        aria-label="Sign out"
                       >
                         <IoLogOutOutline size={16} />
                         Sign Out
@@ -193,12 +197,15 @@ const Navbar = () => {
                 <button
                   onClick={() => setDropdown(prev => !prev)}
                   className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-white/5 border border-white/10"
+                  aria-expanded={dropdown}
+                  aria-haspopup="true"
+                  aria-label={logged ? `User menu for ${logged}` : 'User menu'}
                 >
                   <div className="w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center">
                     <FaRegCircleUser size={12} className="text-indigo-400" />
                   </div>
                   <svg
-                    className={`w-3 h-3 text-slate-500 transition-transform duration-200 ${dropdown ? 'rotate-180' : ''}`}
+                    className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${dropdown ? 'rotate-180' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -213,13 +220,14 @@ const Navbar = () => {
                     }`}
                 >
                   <div className="px-3 py-2 border-b border-white/10 bg-white/5 truncate">
-                    <p className="text-[10px] text-slate-500 mb-0.5">Signed in as</p>
+                    <p className="text-[10px] text-slate-400 mb-0.5">Signed in as</p>
                     <p className="text-xs text-white font-medium truncate">{logged}</p>
                   </div>
                   <div className="p-1 space-y-0.5">
                     <button
                       onClick={() => setTheme(!theme)}
                       className="flex w-full items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-slate-300"
+                      aria-label={theme ? 'Switch to light mode' : 'Switch to dark mode'}
                     >
                       {theme ? <MdDarkMode size={14} className="text-slate-400" /> : <CiLight size={14} className="text-slate-400" />}
                       {theme ? 'Dark Mode' : 'Light Mode'}
@@ -227,6 +235,7 @@ const Navbar = () => {
                     <button
                       onClick={() => { setDropdown(false); router.push('/settings') }}
                       className="flex w-full items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-slate-300"
+                      aria-label="Open settings"
                     >
                       <IoSettingsOutline size={14} className="text-slate-400" />
                       Settings
@@ -235,6 +244,7 @@ const Navbar = () => {
                     <button
                       onClick={handleLogOut}
                       className="flex w-full items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-rose-400 hover:bg-rose-500/10"
+                      aria-label="Sign out"
                     >
                       <IoLogOutOutline size={14} />
                       Sign Out

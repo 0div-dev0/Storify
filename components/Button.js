@@ -25,12 +25,18 @@ const Login = ({ flex, btn, width, color, inp=true, onClick=null }) => {
       className="flex md:w-150 w-full gap-3 mx-auto md:mx-0"
       style={{ flexDirection: flex, width: width }}
     >
-      {inp && <input
-        type="email"
-        value={uInput}
-        onChange={handleChange}
-        className="px-10 text-black bg-white rounded-lg w-full h-10"
-      />}
+      {inp && (
+        <>
+          <label htmlFor="button-email-input" className="sr-only">Email address</label>
+          <input
+            id="button-email-input"
+            type="email"
+            value={uInput}
+            onChange={handleChange}
+            className="px-10 text-black bg-white rounded-lg w-full h-10"
+          />
+        </>
+      )}
 
       <button
         onClick={handleClick}

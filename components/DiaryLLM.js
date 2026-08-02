@@ -191,25 +191,35 @@ export default function DiaryLLM() {
         {/* Header bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-4 border-b border-white/5 bg-gray-950/80">
           <div className="flex items-center gap-3 flex-1 min-w-0 w-full sm:w-auto">
+            <label htmlFor="journal-title" className="sr-only">
+              Journal entry title
+            </label>
             <input
+              id="journal-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Untitled Entry"
-              className="flex-1 bg-transparent text-xl font-semibold text-white placeholder:text-slate-600 focus:outline-none truncate"
+              className="flex-1 bg-transparent text-xl font-semibold text-white placeholder:text-slate-400 focus:outline-none truncate"
             />
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {!editingId && (
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-slate-800/60 border border-slate-700 text-slate-300 text-sm px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500/50 [color-scheme:dark]"
-              />
+              <div>
+                <label htmlFor="journal-date" className="sr-only">
+                  Journal entry date
+                </label>
+                <input
+                  id="journal-date"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="bg-slate-800/60 border border-slate-700 text-slate-300 text-sm px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500/50 [color-scheme:dark]"
+                />
+              </div>
             )}
             {editingId && (
-              <span className="text-sm text-slate-500 italic">
+              <span className="text-sm text-slate-400 italic">
                 {new Date(selectedDate).toLocaleDateString('en-US', {
                   weekday: 'short',
                   year: 'numeric',
@@ -241,13 +251,13 @@ export default function DiaryLLM() {
               </span>
             )}
             {saveStatus === 'empty' && (
-              <span className="text-amber-400 text-sm">Write something before saving.</span>
+              <span className="text-amber-300 text-sm">Write something before saving.</span>
             )}
             {saveStatus && saveStatus !== 'saved' && saveStatus !== 'empty' && saveStatus !== 'error' && (
-              <span className="text-rose-400 text-sm">{saveStatus}</span>
+              <span className="text-rose-300 text-sm">{saveStatus}</span>
             )}
             {saveStatus === 'error' && (
-              <span className="text-rose-400 text-sm">Failed to save. Try again.</span>
+              <span className="text-rose-300 text-sm">Failed to save. Try again.</span>
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -296,11 +306,11 @@ function EditorToolbar({ editor }) {
 
   const btnClass = (active) =>
     `p-2 rounded-lg text-sm transition-all ${active
-      ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
-      : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
+      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+      : 'text-slate-300 hover:text-white hover:bg-white/5 border border-transparent'
     }`
 
-  const divider = <div className="w-px h-5 bg-white/10 mx-0.5" />
+  const divider = <div className="w-px h-5 bg-white/20 mx-0.5" />
 
   return (
     <div className="flex items-center gap-1 px-4 py-2 border-b border-white/5 bg-gray-900/50 flex-wrap">
@@ -308,6 +318,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().toggleBold().run()}
         className={btnClass(editor.isActive('bold'))}
+        aria-label="Bold"
         title="Bold (Ctrl+B)"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -317,6 +328,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().toggleItalic().run()}
         className={btnClass(editor.isActive('italic'))}
+        aria-label="Italic"
         title="Italic (Ctrl+I)"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -326,6 +338,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().toggleUnderline().run()}
         className={btnClass(editor.isActive('underline'))}
+        aria-label="Underline"
         title="Underline (Ctrl+U)"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -335,6 +348,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().toggleStrike().run()}
         className={btnClass(editor.isActive('strike'))}
+        aria-label="Strikethrough"
         title="Strikethrough"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -344,6 +358,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().toggleHighlight({ color: '#fbbf24' }).run()}
         className={btnClass(editor.isActive('highlight'))}
+        aria-label="Highlight"
         title="Highlight"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -358,6 +373,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
         className={btnClass(editor.isActive('heading', { level: 1 }))}
+        aria-label="Heading 1"
         title="Heading 1"
       >
         <span className="font-bold text-xs">H1</span>
@@ -365,6 +381,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         className={btnClass(editor.isActive('heading', { level: 2 }))}
+        aria-label="Heading 2"
         title="Heading 2"
       >
         <span className="font-bold text-xs">H2</span>
@@ -372,6 +389,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         className={btnClass(editor.isActive('heading', { level: 3 }))}
+        aria-label="Heading 3"
         title="Heading 3"
       >
         <span className="font-bold text-xs">H3</span>
@@ -383,6 +401,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         className={btnClass(editor.isActive('bulletList'))}
+        aria-label="Bullet list"
         title="Bullet List"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -392,6 +411,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         className={btnClass(editor.isActive('orderedList'))}
+        aria-label="Numbered list"
         title="Numbered List"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -401,6 +421,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         className={btnClass(editor.isActive('blockquote'))}
+        aria-label="Blockquote"
         title="Blockquote"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -410,6 +431,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
         className={btnClass(editor.isActive('codeBlock'))}
+        aria-label="Code block"
         title="Code Block"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -423,6 +445,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().setTextAlign('left').run()}
         className={btnClass(editor.isActive({ textAlign: 'left' }))}
+        aria-label="Align left"
         title="Align Left"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -432,6 +455,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().setTextAlign('center').run()}
         className={btnClass(editor.isActive({ textAlign: 'center' }))}
+        aria-label="Align center"
         title="Align Center"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -441,6 +465,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().setTextAlign('right').run()}
         className={btnClass(editor.isActive({ textAlign: 'right' }))}
+        aria-label="Align right"
         title="Align Right"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -455,6 +480,7 @@ function EditorToolbar({ editor }) {
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().undo()}
         className={`${btnClass(false)} disabled:opacity-30 disabled:cursor-not-allowed`}
+        aria-label="Undo"
         title="Undo (Ctrl+Z)"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -465,6 +491,7 @@ function EditorToolbar({ editor }) {
         onClick={() => editor.chain().focus().redo().run()}
         disabled={!editor.can().redo()}
         className={`${btnClass(false)} disabled:opacity-30 disabled:cursor-not-allowed`}
+        aria-label="Redo"
         title="Redo (Ctrl+Shift+Z)"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -478,6 +505,7 @@ function EditorToolbar({ editor }) {
       <button
         onClick={() => editor.chain().focus().setHorizontalRule().run()}
         className={btnClass(false)}
+        aria-label="Horizontal rule"
         title="Horizontal Rule"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">

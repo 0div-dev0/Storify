@@ -77,7 +77,7 @@ export default function TodayGoals() {
         {loading ? (
           [1, 2].map(i => <div key={i} className="h-8 bg-indigo-500/5 animate-pulse rounded-lg"></div>)
         ) : todayGoals.length === 0 ? (
-          <p className="text-xs text-slate-500 italic">No goals set for this period. Add one in the calendar!</p>
+          <p className="text-xs text-slate-400 italic">No goals set for this period. Add one in the calendar!</p>
         ) : (
           todayGoals.map(goal => {
             const isCompleted = goal.completedDates.includes(todayStr);
@@ -95,7 +95,7 @@ export default function TodayGoals() {
                 </div>
                 <button
                   onClick={() => handleDeleteGoal(goal._id)}
-                  className="opacity-0 group/item-hover:opacity-100 p-1 rounded-md text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                  className="opacity-0 group/item-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
                   title="Delete goal"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

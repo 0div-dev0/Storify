@@ -91,15 +91,15 @@ export default function PreviousJournals({ onEdit, onDelete, activeId }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
             <h3 className="text-sm font-semibold text-white">Journal Entries</h3>
-            <span className="text-xs text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded-full">
+            <span className="text-xs text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded-full">
               {displayJournals.length}
             </span>
           </div>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded-md text-slate-500 hover:text-white hover:bg-white/5 transition-all"
-          title={collapsed ? 'Expand' : 'Collapse'}
+          className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+          aria-label={collapsed ? 'Expand journal list' : 'Collapse journal list'}
         >
           <svg
             className={`w-4 h-4 transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`}
@@ -122,18 +122,18 @@ export default function PreviousJournals({ onEdit, onDelete, activeId }) {
           ) : displayJournals.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
               <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mb-3">
-                <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                 </svg>
               </div>
-              <p className="text-sm text-slate-500 mb-1">No entries yet</p>
-              <p className="text-xs text-slate-600">Start writing to see your journals here.</p>
+              <p className="text-sm text-slate-400 mb-1">No entries yet</p>
+              <p className="text-xs text-slate-400">Start writing to see your journals here.</p>
             </div>
           ) : (
             <div className="p-2 space-y-4">
               {Object.entries(groupedJournals).map(([monthYear, entries]) => (
                 <div key={monthYear}>
-                  <p className="text-[10px] uppercase tracking-widest text-slate-600 font-semibold px-2 mb-1.5">
+                  <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold px-2 mb-1.5">
                     {monthYear}
                   </p>
                   <div className="space-y-1">
@@ -156,11 +156,11 @@ export default function PreviousJournals({ onEdit, onDelete, activeId }) {
                                 </span>
                               )}
                             </p>
-                            <p className="text-xs text-slate-500 mt-0.5">
+                            <p className="text-xs text-slate-400 mt-0.5">
                               {formatDate(journal.date)}
                             </p>
                             {journal.plainText && (
-                              <p className="text-xs text-slate-600 mt-1.5 line-clamp-2 leading-relaxed">
+                              <p className="text-xs text-slate-400 mt-1.5 line-clamp-2 leading-relaxed">
                                 {journal.plainText.slice(0, 120)}
                               </p>
                             )}
@@ -172,8 +172,8 @@ export default function PreviousJournals({ onEdit, onDelete, activeId }) {
                               handleDelete(journal)
                             }}
                             disabled={deleting === journal._id}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all shrink-0"
-                            title="Delete entry"
+                            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all shrink-0"
+                            aria-label={deleting === journal._id ? `Deleting ${journal.title || 'Untitled Entry'}` : `Delete journal entry: ${journal.title || 'Untitled Entry'}`}
                           >
                             {deleting === journal._id ? (
                               <div className="w-3.5 h-3.5 border-2 border-rose-500/30 border-t-rose-500 rounded-full animate-spin" />
