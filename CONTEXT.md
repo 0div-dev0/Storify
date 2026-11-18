@@ -15,8 +15,9 @@ and an AI turns your entries into either a *lifestyle analysis* or a *story*.
 - **Stack:** Next.js 16 (App Router, Turbopack), React 19, Tailwind CSS v4, MongoDB via Mongoose.
 - **AI:** OpenRouter (`google/gemini-2.5-flash`) for generation; keyword-matching for goal analysis.
 - **Motion:** GSAP 3.15 (`gsap` + ScrollTrigger + SplitText) drives the `/` landing page.
-  `components/landing/SectionChoreography.js` owns between-section transitions,
-  directional scroll lean, and the chapter HUD. See `lib/gsap.js` and §7.
+  `components/landing/SectionParallax.js` owns bounded scroll + pointer parallax on
+  selected elements. Nothing is thrown off screen, and reduced-motion users get static
+  content. See `lib/gsap.js` and §7.
 - **No auth.** Login/register/NextAuth/email verification were fully removed — the app is
   **single-user**. There is no session, no user id, no route protection.
 - **No API keys beyond two** (see §6). Everything else is client/server local.
@@ -44,7 +45,7 @@ app/
   actions/
     llm.js             Server action (OpenRouter) — currently UNUSED/dead code.
 components/            All UI. See §4.
-  landing/             ★ The `/` landing page — see §4b. Includes SectionChoreography.js.
+  landing/             ★ The `/` landing page — see §4b. Includes SectionParallax.js.
 lib/
   gsap.js              ★ GSAP entry: registers ScrollTrigger + SplitText, exports
                       `gsap`, `useIsoLayoutEffect`, `useScrollRefresh`.
@@ -105,23 +106,26 @@ All are client components animated with GSAP.
 
 | Component | Section | Signature motion |
 |-----------|---------|------------------|
-| `Hero` | Opening screen | Entrance timeline, SplitText word reveal, parallax backdrop, drifting dust motes, rotating seal, pointer-tilt journal card |
-| `Ticker` | Infinite type marquee band (`bg-mahogany` / `bg-cocoa`) | `xPercent` loop, duplicated track for a seamless -50% wrap |
-| `What` | "What it is" (`bg-tan`) | Copy reveal, ruled-line `scaleX` wipe, specimen-page parallax, icon ink-pop |
-| `Why` | "Why keep one" (`bg-paper`) | Cards deal in with rotation, number counters, stat-rule sweep |
-| `How` | "How to use it" (`bg-espresso`, `#how`) | **Pinned horizontal scroll on desktop** (vertical scroll drives a horizontal track via `containerAnimation`); cards zoom/spin in and out. Vertical staggered fallback below 1024px. |
-| `Contact` | "Say hello" (`bg-clay`) | Field stagger, success-state pop. Submits via `mailto:` (no backend) |
-| `Footer` | `bg-espresso` | Column stagger, rotating diamond |
-| `SectionChoreography` | Fixed overlay, rendered last in `app/page.js` | Between-chapter zoom → spin → slide exit with a sweeping veil; velocity/direction lean on `[data-directional]` elements; chapter HUD. Reads the `data-chapter` wrappers in `app/page.js`. |
+| `Hero` | Opening screen | Entrance timeline, SplitText word reveal, bounded backdrop/card/note parallax, mouse parallax on headline + CTAs + chips + paper, drifting dust motes, rotating seal, pointer-tilt journal card |
+| `Ticker` | Infinite type marquee band (`bg-mahogany` / `bg-cocoa`) | `xPercent` loop, duplicated track for a seamless -50% wrap; subtle mouse parallax on the band |
+| `What` | "What it is" (`bg-tan`) | Ruled-line `scaleX` wipe, specimen-page scroll parallax, icon ink-pop, selected pillar parallax |
+| `Why` | "Why keep one" (`bg-paper`) | Reason cards + stat strip drift in bounded directions, number counters, stat-rule sweep |
+| `How` | "How to use it" (`bg-espresso`, `#how`) | **Pinned horizontal scroll on desktop** (vertical scroll drives a horizontal track via `containerAnimation`); cards reveal on entry with no off-screen exit. Vertical staggered fallback below 1024px. |
+| `Contact` | "Say hello" (`bg-clay`) | Bounded form/heading parallax, quill mouse parallax, success-state pop. Submits via `mailto:` (no backend) |
+| `Footer` | `bg-espresso` | Selected column parallax, rotating diamond |
+| `SectionParallax` | Controller, rendered last in `app/page.js` | Scroll-scrubbed `--scroll-x/y` and eased pointer `--mouse-x/y` custom properties, composed by CSS `translate`. Only selected, untransformed elements move; all values are bounded. No off-screen transitions, no swing/pendulum. |
 
 **Anchors:** `#top` (page wrapper) and `#how` (`How` section). Keep them in sync with any in-page links.
 
 **Chapter wrappers:** every landing section is wrapped in `<div data-chapter="Label">` in
-`app/page.js`. `SectionChoreography` animates the **inner** `[data-chapter-visual]`
-element, never the wrapper's layout box, so pins and anchors keep their measurements.
-Mark a visual `data-chapter-flat` (as `How` does) to keep the global zoom/spin gentle
-inside a pinned section. Render `SectionChoreography` last among siblings so its
-ScrollTriggers are created after the pinned horizontal triggers.
+`app/page.js`. The wrappers are trigger/anchoring context only — they are never
+transformed. `SectionParallax` selects a small subset of elements inside them via
+`data-parallax-x/y` and `data-mouse-x/y`. Scroll and pointer each write their own CSS
+variable; `globals.css` composes them with `translate`, so the two systems never fight.
+When GSAP transforms an element, put the parallax attributes on an untransformed child
+or parent wrapper instead — GSAP writes `translate: none` inline on elements it owns.
+Render `SectionParallax` last among siblings so its ScrollTriggers are created after the
+pinned horizontal triggers.
 
 ---
 
@@ -191,9 +195,18 @@ Only two keys, both required:
     `mm.add(...)`. That way **reduced-motion users get fully visible, un-animated
     content** — never `gsap.set(..., {opacity: 0})` outside that branch.
   - For pinned horizontal scroll, the track tween must use `ease: "none"` and
-    per-card triggers must set `containerAnimation` to that tween. `How` uses the
-    default `fixed` pin because the global chapter transform is on a child of
-    the pinned section, not an ancestor.
+    per-card triggers must set `containerAnimation` to that tween. Chapter wrappers are
+    static, so the default `fixed` pin stays accurate.
+  - Bounded parallax uses `data-parallax-x/y` for scroll and `data-mouse-x/y` for
+    pointer. `globals.css` composes `--scroll-*` and `--mouse-*` through the independent
+    `translate` property. Only put these attributes on elements GSAP does **not**
+    transform directly: GSAP sets inline `translate: none` on its own targets, which
+    silently disables CSS parallax. Move the attributes to a child/parent wrapper when
+    an element already has a GSAP transform.
+  - Pointer parallax is gated to `(hover: hover) and (pointer: fine)` and
+    `prefers-reduced-motion: no-preference`. Cleanup kills the tweens, removes the
+    listeners and resets the custom properties. Do not reintroduce off-screen exits,
+    chapter flips, or pendulum/swing motion.
   - Scope with `gsap.context(() => {...}, rootRef)` and select via `data-*`
     attributes (never bare class names — Tailwind classes change often).
   - `@gsap/react` is **not installed** (registry was unreachable); use
@@ -233,10 +246,33 @@ npm run start   # serve the production build
 - **GSAP installed offline:** `gsap@3.15.1` came from the local npm cache;
   `@gsap/react` was not cached, so the `useGSAP()` hook is intentionally not used.
 - **Landing motion overhaul:** enlarged the hero journal page, unified CTA alignment
-  (`.landing-cta`) and the `max-w-[88rem]` container across sections. Added
-  `SectionChoreography.js` for zoom → multi-axis spin → slide exits, a sweeping veil,
-  velocity/directional lean, and a chapter HUD. `How` is now a pinned horizontal
-  scroller on desktop with a vertical fallback. Added `data-chapter` wrappers in
-  `app/page.js` and `data-chapter-visual` / `data-chapter-flat` hooks in sections.
+  (`.landing-cta`) and the `max-w-[88rem]` container across sections. `How` is a pinned
+  horizontal scroller on desktop with a vertical fallback. Added `data-chapter`
+  wrappers in `app/page.js`.
+- **Motion v2 (per-element, superseded in v4):** removed the whole-section flip and full-screen veil.
+  `SectionChoreography.js` now runs seven distinct, slow (`scrub: 1.3`) recipes that
+  move individual headings/paragraphs/cards/fields off screen in different directions
+  and bounce them back in with an ~84% opacity floor. Incoming headings are split
+  into words for progressive, scroll-linked pops. What/Why gained in-section
+  horizontal drift. Section-local generic reveals were removed so choreography is
+  the single owner.
+- **Motion v3 (timing + pendulum, superseded in v4):** split each boundary into an EXIT trigger
+  (`top 42%` → `bottom 100%`, `scrub: 0.65`) that finishes before the next section
+  enters, and an ENTRANCE trigger (`top 96%` → `top 46%`, `scrub: 0.75`) that settles
+  the new section early. Added `lib/pendulum.js`: scroll velocity kicks `[data-swing]`
+  elements through a CSS `--swing-rotate` custom property so cards/headings/graphics
+  hang and damp to rest without fighting GSAP transforms. Hero CTAs now share an
+  identical box and equal width. Added idle breathing to the sticky note and contact
+  form and retargeted directional lean to `xPercent` so it composes with exits.
+- **Motion v4 (bounded parallax):** removed the off-screen chapter-exit system entirely —
+  deleted `components/landing/SectionChoreography.js` and `lib/pendulum.js`, including
+  swing, chapter HUD, and off-screen `EXIT`/`ENTRANCE` tweens. Added
+  `components/landing/SectionParallax.js`: bounded scroll parallax in alternating
+  directions plus eased pointer parallax across the hero, cards, headings, ticker and
+  footer. Replaced `[data-swing]` with `data-parallax-x/y` and `data-mouse-x/y`; CSS
+  composes them through `translate`. Parallax targets moved off GSAP-transformed
+  elements (wrappers/children used instead), and `floatLoop` calls were removed from all
+  landing sections. `How` no longer spins/fades cards off screen. Hero CTA boxes share
+  identical width/height and no longer use `y`/`scale` in the entrance tween.
 
 *When you change any of the above, update the relevant section AND append a line here.*

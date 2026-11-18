@@ -40,23 +40,7 @@ export default function Footer() {
 
     mm.add("(prefers-reduced-motion: no-preference)", () => {
       const ctx = gsap.context(() => {
-        gsap.from("[data-reveal]", {
-          y: 34,
-          opacity: 0,
-          duration: 0.8,
-          stagger: 0.1,
-          ease: "power3.out",
-          scrollTrigger: { trigger: root.current, start: "top 88%" },
-        });
-
-        gsap.from("[data-col]", {
-          y: 26,
-          opacity: 0,
-          duration: 0.75,
-          stagger: 0.1,
-          ease: "power3.out",
-          scrollTrigger: { trigger: root.current, start: "top 90%" },
-        });
+        /* No entrance choreography — only bounded parallax on selected columns. */
 
         gsap.to("[data-foot-diamond]", {
           rotate: 360,
@@ -76,7 +60,12 @@ export default function Footer() {
       <div data-chapter-visual className="max-w-[88rem] mx-auto">
         {/* Top */}
         <div className="grid gap-12 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
-          <div data-reveal className="flex flex-col gap-5 max-w-sm">
+          <div
+            data-reveal
+            data-mouse-x="6"
+            data-mouse-y="3"
+            className="flex flex-col gap-5 max-w-sm"
+          >
             <Logo tone="dark" />
             <p className="font-body text-sm text-tan/75 leading-[1.85]">
               A vintage-styled journal that keeps your days, tracks your goals,
@@ -88,8 +77,16 @@ export default function Footer() {
             </div>
           </div>
 
-          {COLUMNS.map((col) => (
-            <nav key={col.title} data-col className="flex flex-col gap-3.5">
+          {COLUMNS.map((col, i) => (
+            <nav
+              key={col.title}
+              data-col
+              data-parallax-x={i === 1 ? -14 : i === 2 ? 18 : 10}
+              data-parallax-y={i === 1 ? 8 : -6}
+              data-mouse-x={i === 1 ? -5 : 5}
+              data-mouse-y={i === 2 ? -4 : 3}
+              className="flex flex-col gap-3.5"
+            >
               <h3 className="eyebrow-light">{col.title}</h3>
               <ul className="flex flex-col gap-2.5">
                 {col.links.map((l) => (

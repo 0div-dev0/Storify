@@ -6,7 +6,7 @@ import Why from "@/components/landing/Why";
 import How from "@/components/landing/How";
 import Contact from "@/components/landing/Contact";
 import Footer from "@/components/landing/Footer";
-import SectionChoreography from "@/components/landing/SectionChoreography";
+import SectionParallax from "@/components/landing/SectionParallax";
 
 // The landing page keeps the brand line as-is; every other route inherits the
 // "%s | Storify" template from the root layout.
@@ -29,9 +29,9 @@ export default function LandingPage() {
     <div id="top" className="flex flex-col min-h-screen bg-paper">
       <Navbar />
 
-      {/* Each wrapper is a scroll "chapter". SectionChoreography animates the
-          [data-chapter-visual] element inside each one, never the wrapper's
-          layout box, so pins and anchors keep their measurements. */}
+      {/* Each wrapper is a scroll "chapter". SectionParallax applies bounded
+          scroll + pointer parallax to selected elements inside each chapter;
+          it never transforms a whole section, so pins and anchors stay stable. */}
       <div data-chapter="Hero">
         <Hero />
       </div>
@@ -66,7 +66,7 @@ export default function LandingPage() {
 
       {/* Rendered last so its ScrollTriggers are created after the pinned
           horizontal section's triggers. */}
-      <SectionChoreography />
+      <SectionParallax />
     </div>
   );
 }

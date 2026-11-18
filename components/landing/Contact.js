@@ -3,7 +3,6 @@
 import React, { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { gsap, useIsoLayoutEffect } from "@/lib/gsap";
-import { floatLoop } from "@/lib/motion";
 import { FaEnvelope, FaPaperPlane, FaCheck } from "react-icons/fa";
 
 const CONTACT_EMAIL = "hello@storify.app";
@@ -28,32 +27,7 @@ export default function Contact() {
 
     mm.add("(prefers-reduced-motion: no-preference)", () => {
       const ctx = gsap.context(() => {
-        gsap.from("[data-reveal]", {
-          y: 42,
-          opacity: 0,
-          duration: 0.9,
-          stagger: 0.12,
-          ease: "power3.out",
-          scrollTrigger: { trigger: root.current, start: "top 76%" },
-        });
-
-        gsap.from("[data-field]", {
-          y: 26,
-          opacity: 0,
-          duration: 0.7,
-          stagger: 0.09,
-          ease: "power3.out",
-          scrollTrigger: { trigger: "[data-form]", start: "top 82%" },
-        });
-
-        /* The card itself arrives with its fields instead of already being there */
-        gsap.from("[data-form]", {
-          y: 46,
-          opacity: 0,
-          duration: 0.9,
-          ease: "power3.out",
-          scrollTrigger: { trigger: "[data-form]", start: "top 86%" },
-        });
+        /* Reveal and headline pops are gone — the form only breathes parallax. */
 
         gsap.from("[data-quill]", {
           rotate: -18,
@@ -62,14 +36,6 @@ export default function Contact() {
           duration: 0.9,
           ease: "back.out(2)",
           scrollTrigger: { trigger: root.current, start: "top 70%" },
-        });
-
-        /* The quill ornament drifts once it has landed (y only — its entrance
-           tween owns rotation/scale, so the loop never overlaps it) */
-        floatLoop("[data-quill]", {
-          amplitude: 5,
-          startDelay: 1.8,
-          duration: 5,
         });
       }, root);
       return () => ctx.revert();
@@ -113,6 +79,10 @@ export default function Contact() {
           </span>
           <h2
             data-reveal
+            data-parallax-x="-14"
+            data-parallax-y="-8"
+            data-mouse-x="6"
+            data-mouse-y="3"
             className="font-display font-black text-3xl md:text-5xl leading-[1.08] text-ink"
           >
             Questions, ideas, or just want to{" "}
@@ -148,12 +118,21 @@ export default function Contact() {
             aria-hidden="true"
             className="absolute -top-6 right-2 lg:right-10 text-sepia/25 text-6xl md:text-7xl pointer-events-none select-none"
           >
-            &#10022;
+            <span data-mouse-x="12" data-mouse-y="8" aria-hidden="true">
+              &#10022;
+            </span>
           </div>
         </div>
 
         {/* RIGHT — form */}
-        <div data-form className="relative">
+        <div
+          data-form
+          data-parallax-x="24"
+          data-parallax-y="-12"
+          data-mouse-x="-8"
+          data-mouse-y="-6"
+          className="relative"
+        >
           {sent ? (
             <div
               ref={successRef}

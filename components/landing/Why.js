@@ -2,7 +2,6 @@
 
 import React, { useRef } from "react";
 import { gsap, useIsoLayoutEffect } from "@/lib/gsap";
-import { floatLoop } from "@/lib/motion";
 import { FaChartLine, FaMagic, FaCheckCircle } from "react-icons/fa";
 
 const REASONS = [
@@ -40,8 +39,7 @@ export default function Why() {
 
     mm.add("(prefers-reduced-motion: no-preference)", () => {
       const ctx = gsap.context(() => {
-        /* Headline, cards, and progressive word pops are owned by
-           SectionChoreography — this section keeps only its own details. */
+        /* Headline and cards stay in place; only bounded parallax moves. */
 
         /* Number counters */
         gsap.utils.toArray("[data-count]").forEach((el) => {
@@ -81,9 +79,6 @@ export default function Why() {
           ease: "power2.inOut",
           scrollTrigger: { trigger: "[data-stats]", start: "top 85%" },
         });
-
-        /* Cards keep breathing once they have landed — out of phase, forever */
-        floatLoop("[data-reason]", { amplitude: 1.6, startDelay: 1.7, stagger: 0.45 });
       }, root);
       return () => ctx.revert();
     });
@@ -101,6 +96,10 @@ export default function Why() {
           </span>
           <h2
             data-reveal
+            data-parallax-x="-16"
+            data-parallax-y="-10"
+            data-mouse-x="6"
+            data-mouse-y="4"
             className="font-display font-black text-3xl md:text-5xl leading-[1.08] text-ink"
           >
             Because memory fades, and{" "}
@@ -121,8 +120,16 @@ export default function Why() {
           data-reasons
           className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {REASONS.map((r) => (
-            <div key={r.title} data-reason className="card-vintage p-7 flex flex-col gap-4 h-full">
+          {REASONS.map((r, i) => (
+            <div
+              key={r.title}
+              data-reason
+              data-parallax-x={i === 1 ? 28 : i === 2 ? -22 : 12}
+              data-parallax-y={i === 1 ? -14 : i === 2 ? 10 : -8}
+              data-mouse-x={i === 1 ? -8 : 6}
+              data-mouse-y={i === 2 ? 5 : -4}
+              className="card-vintage p-7 flex flex-col gap-4 h-full"
+            >
               <span
                 data-reason-icon
                 className={`w-11 h-11 rounded-full flex items-center justify-center text-lg ${r.accent}`}
@@ -139,7 +146,14 @@ export default function Why() {
         </div>
 
         {/* Stat strip */}
-        <div data-stats className="mt-16 md:mt-24">
+        <div
+          data-stats
+          data-parallax-x="14"
+          data-parallax-y="-8"
+          data-mouse-x="-5"
+          data-mouse-y="3"
+          className="mt-16 md:mt-24"
+        >
           <div data-stat-line className="h-px w-full bg-sepia/25 origin-left" />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 py-10">
             {STATS.map((s) => (

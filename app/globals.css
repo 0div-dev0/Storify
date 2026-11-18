@@ -315,21 +315,30 @@ input:focus, textarea:focus {
 
 /* Landing page — shared alignment primitives -------------------------------- */
 .landing-cta {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 3.35rem;
-  padding-inline: 1.6rem;
+  padding: 0.7rem 1.6rem;
+  line-height: 1.4;
   white-space: nowrap;
 }
-
-/* Chapters are animated by components/landing/SectionChoreography.js.
-   Only the inner visual is transformed, so ScrollTrigger measurements on the
-   section itself stay stable. */
-[data-chapter-visual] {
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-  transform-style: preserve-3d;
+@media (min-width: 640px) {
+  .sm\:flex-row > .landing-cta {
+    flex: 1 1 0;
+  }
 }
-[data-chapter-flat] {
-  will-change: transform, opacity;
+
+/* Bounded parallax. Scroll and pointer each own a variable; `translate` is an
+   individual transform property, so this composes with any GSAP transform. */
+[data-parallax-x],
+[data-parallax-y],
+[data-mouse-x],
+[data-mouse-y] {
+  translate:
+    calc(var(--scroll-x, 0px) + var(--mouse-x, 0px))
+    calc(var(--scroll-y, 0px) + var(--mouse-y, 0px));
 }
 
 /* Fade-in — modals, toasts, saved confirmations ----------------------------- */

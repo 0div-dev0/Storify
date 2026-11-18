@@ -2,7 +2,6 @@
 
 import React, { useRef } from "react";
 import { gsap, useIsoLayoutEffect } from "@/lib/gsap";
-import { floatLoop } from "@/lib/motion";
 import { FaPenNib, FaBullseye, FaMagic } from "react-icons/fa";
 
 const PILLARS = [
@@ -31,7 +30,7 @@ export default function What() {
 
     mm.add("(prefers-reduced-motion: no-preference)", () => {
       const ctx = gsap.context(() => {
-        /* Copy + progressive word pops are owned by SectionChoreography. */
+        /* Copy stays static; only the selected elements carry bounded parallax. */
 
         /* Ruled lines wipe in from the left */
         gsap.from("[data-rule]", {
@@ -67,9 +66,6 @@ export default function What() {
           ease: "back.out(2.2)",
           scrollTrigger: { trigger: "[data-pillars]", start: "top 80%" },
         });
-
-        /* Pillar cards drift in and never quite settle */
-        floatLoop("[data-pillar]", { amplitude: 1.4, startDelay: 2.1, stagger: 0.5 });
       }, root);
       return () => ctx.revert();
     });
@@ -89,6 +85,10 @@ export default function What() {
 
             <h2
               data-reveal
+              data-parallax-x="-14"
+              data-parallax-y="-8"
+              data-mouse-x="6"
+              data-mouse-y="3"
               className="font-display font-black text-3xl md:text-5xl leading-[1.08] text-ink"
             >
               A journal that reads itself{" "}
@@ -117,7 +117,13 @@ export default function What() {
 
           {/* RIGHT — specimen page */}
           <div data-specimen className="relative will-change-transform">
-            <div className="card-vintage p-6 md:p-9 ruled-paper shadow-[0_28px_60px_-24px_rgba(74,49,32,0.5)]">
+            <div
+              data-parallax-x="30"
+              data-parallax-y="-18"
+              data-mouse-x="-10"
+              data-mouse-y="-7"
+              className="card-vintage p-6 md:p-9 ruled-paper shadow-[0_28px_60px_-24px_rgba(74,49,32,0.5)]"
+            >
               <div className="flex items-baseline justify-between mb-6">
                 <span className="eyebrow">Entry — no. 214</span>
                 <span className="font-mono text-[11px] text-ink-faint">
@@ -161,8 +167,17 @@ export default function What() {
           data-pillars
           className="max-w-[88rem] mx-auto mt-16 md:mt-24 grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {PILLARS.map((p) => (
-            <div key={p.title} data-reveal data-pillar className="card-vintage p-7 h-full flex flex-col gap-4">
+          {PILLARS.map((p, i) => (
+            <div
+              key={p.title}
+              data-reveal
+              data-pillar
+              data-parallax-x={i === 1 ? -20 : i === 2 ? 26 : 14}
+              data-parallax-y={i === 1 ? 12 : i === 2 ? -10 : -6}
+              data-mouse-x={i === 1 ? -6 : 7}
+              data-mouse-y={i === 2 ? -5 : 4}
+              className="card-vintage p-7 h-full flex flex-col gap-4"
+            >
               <span
                 data-pillar-icon
                 className="w-11 h-11 rounded-full bg-terracotta/15 text-terracotta flex items-center justify-center text-lg"

@@ -78,7 +78,7 @@ export default function Hero() {
         tl.from("[data-hero-tag]", { opacity: 0, y: 20, duration: 0.7 }, "-=0.55")
           .from(
             "[data-hero-cta] > *",
-            { opacity: 0, y: 22, scale: 0.96, duration: 0.6, stagger: 0.1 },
+            { opacity: 0, duration: 0.6, stagger: 0.1 },
             "-=0.4"
           )
           .from(
@@ -187,7 +187,12 @@ export default function Hero() {
       className="relative w-full min-h-[96vh] md:min-h-[104vh] overflow-hidden bg-paper flex flex-col justify-center"
     >
       {/* Aged backdrop + warm wash */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      <div
+        className="absolute inset-0 pointer-events-none"
+        data-mouse-x="7"
+        data-mouse-y="4"
+        aria-hidden="true"
+      >
         <div data-bg className="absolute inset-0 -top-[8%] h-[116%]">
           <Image
             src="/images/heroimage1.jpg"
@@ -225,6 +230,8 @@ export default function Hero() {
 
           <h1
             ref={headingRef}
+            data-mouse-x="7"
+            data-mouse-y="4"
             className="font-display font-black text-4xl sm:text-5xl md:text-5xl lg:text-[3.9rem] leading-[1.05] text-ink"
           >
             See what you&rsquo;ve been up to with{" "}
@@ -238,6 +245,8 @@ export default function Hero() {
 
           <div
             data-hero-cta
+            data-mouse-x="5"
+            data-mouse-y="3"
             className="flex w-full flex-col sm:flex-row sm:items-stretch gap-3 sm:gap-4"
           >
             <Link href="/journal" className="btn-vintage landing-cta w-full sm:w-auto">
@@ -251,6 +260,8 @@ export default function Hero() {
           <ul
             data-hero-chips
             data-directional
+            data-mouse-x="-6"
+            data-mouse-y="4"
             className="flex flex-wrap gap-x-7 gap-y-2 justify-start font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft"
           >
             <li>Two AI lenses</li>
@@ -265,6 +276,13 @@ export default function Hero() {
             className="absolute -top-12 -right-2 md:-right-8 z-20 w-28 h-28 md:w-32 md:h-32 text-sepia pointer-events-none"
             aria-hidden="true"
           >
+            <div
+              data-parallax-x="-28"
+              data-parallax-y="14"
+              data-mouse-x="18"
+              data-mouse-y="10"
+              className="h-full w-full"
+            >
             <svg viewBox="0 0 120 120" className="seal-disc w-full h-full">
               <defs>
                 <path
@@ -282,6 +300,7 @@ export default function Hero() {
               </text>
               <path d="M60 48 L72 60 L60 72 L48 60 Z" fill="currentColor" opacity="0.85" />
             </svg>
+            </div>
           </div>
 
           <div
@@ -290,7 +309,13 @@ export default function Hero() {
             className="card-vintage ruled-paper relative flex min-h-[440px] md:min-h-[560px] flex-col p-6 md:p-9 shadow-[0_36px_80px_-32px_rgba(74,49,32,0.6)] will-change-transform"
             style={{ transformStyle: "preserve-3d" }}
           >
-            <div className="grid flex-1 grid-cols-1 gap-7 lg:grid-cols-[1.28fr_0.72fr] lg:gap-9">
+            <div
+              data-parallax-x="24"
+              data-parallax-y="-14"
+              data-mouse-x="-12"
+              data-mouse-y="-8"
+              className="grid flex-1 grid-cols-1 gap-7 lg:grid-cols-[1.28fr_0.72fr] lg:gap-9"
+            >
               <div className="flex min-h-0 flex-col">
                 <div className="flex items-baseline justify-between gap-4">
                   <span className="eyebrow">From the diary</span>
@@ -331,7 +356,15 @@ export default function Hero() {
             data-note
             className="absolute -bottom-7 -left-3 md:-left-8 max-w-[16rem] -rotate-3 rounded-xl bg-espresso px-5 py-3 text-parchment shadow-[0_18px_40px_-16px_rgba(74,49,32,0.9)]"
           >
-            <p className="font-display text-sm italic md:text-base">Imperfect, but done.</p>
+            <p
+              data-parallax-x="18"
+              data-parallax-y="12"
+              data-mouse-x="-14"
+              data-mouse-y="8"
+              className="font-display text-sm italic md:text-base"
+            >
+              Imperfect, but done.
+            </p>
           </div>
         </div>
       </div>

@@ -51,6 +51,8 @@ export default function Ticker({ items, reverse = false, className = "" }) {
   return (
     <div
       ref={root}
+      data-mouse-x="4"
+      data-mouse-y="2"
       className={`relative overflow-hidden py-4 md:py-5 select-none ${className}`}
       aria-hidden="true"
     >

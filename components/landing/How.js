@@ -3,7 +3,6 @@
 import React, { useRef } from "react";
 import Link from "next/link";
 import { gsap, useIsoLayoutEffect } from "@/lib/gsap";
-import { floatLoop } from "@/lib/motion";
 import { FaPenNib, FaBullseye, FaRobot, FaBookOpen, FaArrowRight } from "react-icons/fa";
 
 const STEPS = [
@@ -81,7 +80,7 @@ export default function How() {
           },
         });
 
-        // Each card is revealed, then spun off-axis as it exits the viewport.
+        // Each card is revealed as it enters; cards never fly off screen.
         gsap.utils.toArray("[data-step]").forEach((step) => {
           const inner = step.querySelector("[data-step-inner]");
           if (!inner) return;
@@ -104,25 +103,7 @@ export default function How() {
               },
             }
           );
-
-          gsap.to(step, {
-            scale: 1.3,
-            autoAlpha: 0.12,
-            rotationY: -280,
-            rotationX: 130,
-            xPercent: -22,
-            ease: "none",
-            scrollTrigger: {
-              trigger: step,
-              containerAnimation: horizontal,
-              start: "right 38%",
-              end: "right -8%",
-              scrub: true,
-            },
-          });
         });
-
-        floatLoop("[data-step-icon]", { amplitude: 2.2, startDelay: 1.4, stagger: 0.35 });
       }, root);
       return () => ctx.revert();
     });
@@ -130,14 +111,7 @@ export default function How() {
     /* ---- Small screens: same content, vertical directional reveals ------- */
     mm.add("(prefers-reduced-motion: no-preference) and (max-width: 1023px)", () => {
       const ctx = gsap.context(() => {
-        gsap.from("[data-reveal]", {
-          y: 38,
-          autoAlpha: 0,
-          duration: 0.8,
-          stagger: 0.1,
-          ease: "power3.out",
-          scrollTrigger: { trigger: root.current, start: "top 78%" },
-        });
+        /* Heading stays static; the pinned track owns its own motion. */
 
         gsap.from("[data-step]", {
           y: 70,
@@ -171,19 +145,17 @@ export default function How() {
       id="how"
       className="relative flex items-center overflow-hidden bg-espresso py-20 md:py-28 lg:h-screen lg:py-0 scroll-mt-20"
     >
-      {/* data-chapter-flat keeps the global zoom transition from rotating the
-          pinned horizontal track out from under its ScrollTrigger. */}
-      <div
-        data-chapter-visual
-        data-chapter-flat
-        className="w-full max-w-[88rem] mx-auto px-6 md:px-14"
-      >
+      <div data-chapter-visual className="w-full max-w-[88rem] mx-auto px-6 md:px-14">
         <div className="max-w-3xl flex flex-col gap-5 pt-4 lg:pt-10">
           <span data-reveal className="eyebrow-light" data-directional>
             How to use it
           </span>
           <h2
             data-reveal
+            data-parallax-x="-12"
+            data-parallax-y="-8"
+            data-mouse-x="6"
+            data-mouse-y="3"
             className="font-display font-black text-3xl md:text-5xl leading-[1.08] text-parchment"
           >
             Four steps, and the{" "}
@@ -197,26 +169,41 @@ export default function How() {
 
         <div data-track-viewport className="relative mt-14 overflow-hidden lg:mt-10">
           <div data-track className="flex flex-col gap-10 lg:w-max lg:flex-row lg:gap-8">
-            {STEPS.map((s) => (
+            {STEPS.map((s, i) => (
               <div key={s.n} data-step className="w-full lg:w-[30rem] lg:shrink-0 will-change-transform">
                 <div
                   data-step-inner
-                  className="flex h-full min-h-[19rem] flex-col gap-5 rounded-2xl bg-cocoa/55 p-7 md:p-8"
+                  className="flex h-full min-h-[19rem] flex-col rounded-2xl bg-cocoa/55 p-7 md:p-8"
                 >
-                  <div className="flex items-center justify-between">
-                    <span
-                      data-step-icon
-                      className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-espresso text-xl text-gold shadow-[0_12px_30px_-12px_rgba(0,0,0,0.8)]"
-                      aria-hidden="true"
-                    >
-                      {s.icon}
-                    </span>
-                    <span className="font-display font-black text-5xl leading-none text-parchment/20">
-                      {s.n}
-                    </span>
+                  <div
+                    data-parallax-x={i % 2 ? -16 : 20}
+                    data-parallax-y={i % 2 ? 10 : -8}
+                    data-mouse-x={i % 2 ? -6 : 6}
+                    data-mouse-y={i % 2 ? 4 : -4}
+                    className="flex h-full flex-col gap-5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span
+                        data-step-icon
+                        className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-espresso text-xl text-gold shadow-[0_12px_30px_-12px_rgba(0,0,0,0.8)]"
+                        aria-hidden="true"
+                      >
+                        <span
+                          data-mouse-x={i % 2 ? -5 : 5}
+                          data-mouse-y={i % 2 ? 3 : -3}
+                          className="flex"
+                          aria-hidden="true"
+                        >
+                          {s.icon}
+                        </span>
+                      </span>
+                      <span className="font-display font-black text-5xl leading-none text-parchment/20">
+                        {s.n}
+                      </span>
+                    </div>
+                    <h3 className="font-display font-bold text-xl text-parchment">{s.title}</h3>
+                    <p className="font-body text-sm text-tan/75 leading-[1.85]">{s.body}</p>
                   </div>
-                  <h3 className="font-display font-bold text-xl text-parchment">{s.title}</h3>
-                  <p className="font-body text-sm text-tan/75 leading-[1.85]">{s.body}</p>
                 </div>
               </div>
             ))}
