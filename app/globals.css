@@ -313,6 +313,25 @@ input:focus, textarea:focus {
   );
 }
 
+/* Landing page — shared alignment primitives -------------------------------- */
+.landing-cta {
+  min-height: 3.35rem;
+  padding-inline: 1.6rem;
+  white-space: nowrap;
+}
+
+/* Chapters are animated by components/landing/SectionChoreography.js.
+   Only the inner visual is transformed, so ScrollTrigger measurements on the
+   section itself stay stable. */
+[data-chapter-visual] {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+[data-chapter-flat] {
+  will-change: transform, opacity;
+}
+
 /* Fade-in — modals, toasts, saved confirmations ----------------------------- */
 @keyframes fade-in {
   from { opacity: 0; }

@@ -41,7 +41,7 @@ export default function Hero() {
         rotateX: -py * 9,
         duration: 0.5,
         ease: "power2.out",
-        transformPerspective: 1000,
+        transformPerspective: 1200,
       });
     };
     const onLeave = () => {
@@ -96,6 +96,7 @@ export default function Hero() {
             { opacity: 0, scale: 0.35, rotate: -45, duration: 0.9, ease: "back.out(2)" },
             0.85
           )
+          .from("[data-note]", { opacity: 0, y: 24, rotate: 6, duration: 0.7 }, "-=0.35")
           .from("[data-scroll-cue]", { opacity: 0, y: -10, duration: 0.6 }, "-=0.3");
 
         /* ---------- Continuous motion graphics ---------- */
@@ -183,7 +184,7 @@ export default function Hero() {
   return (
     <section
       ref={root}
-      className="relative w-full min-h-[92vh] md:min-h-[100vh] overflow-hidden bg-paper flex flex-col justify-center"
+      className="relative w-full min-h-[96vh] md:min-h-[104vh] overflow-hidden bg-paper flex flex-col justify-center"
     >
       {/* Aged backdrop + warm wash */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
@@ -212,16 +213,19 @@ export default function Hero() {
         ))}
       </div>
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-14 py-20 md:py-24 grid md:grid-cols-[1.1fr_1fr] gap-14 md:gap-12 items-center">
+      <div
+        data-chapter-visual
+        className="relative z-10 w-full max-w-[88rem] mx-auto px-6 md:px-14 py-24 md:py-28 grid lg:grid-cols-[0.95fr_1.05fr] gap-16 lg:gap-12 items-center"
+      >
         {/* LEFT — headline */}
-        <div className="flex flex-col gap-7 text-center md:text-left">
-          <span data-hero-eyebrow className="eyebrow">
+        <div className="flex flex-col gap-7 text-left">
+          <span data-hero-eyebrow className="eyebrow" data-directional>
             Est. — Your life, in chapters
           </span>
 
           <h1
             ref={headingRef}
-            className="font-display font-black text-4xl sm:text-5xl md:text-6xl lg:text-[4.2rem] leading-[1.03] text-ink"
+            className="font-display font-black text-4xl sm:text-5xl md:text-5xl lg:text-[3.9rem] leading-[1.05] text-ink"
           >
             See what you&rsquo;ve been up to with{" "}
             <span className="text-terracotta italic">AI journal summaries</span>,
@@ -232,29 +236,33 @@ export default function Hero() {
             &ldquo;Turn your life into a story.&rdquo;
           </p>
 
-          <div data-hero-cta className="flex flex-wrap gap-4 justify-center md:justify-start">
-            <Link href="/journal" className="btn-vintage">
+          <div
+            data-hero-cta
+            className="flex w-full flex-col sm:flex-row sm:items-stretch gap-3 sm:gap-4"
+          >
+            <Link href="/journal" className="btn-vintage landing-cta w-full sm:w-auto">
               Start building your story
             </Link>
-            <Link href="#how" className="btn-outline">
+            <Link href="#how" className="btn-outline landing-cta w-full sm:w-auto">
               See how it works
             </Link>
           </div>
 
           <ul
             data-hero-chips
-            className="flex flex-wrap gap-x-7 gap-y-2 justify-center md:justify-start font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft"
+            data-directional
+            className="flex flex-wrap gap-x-7 gap-y-2 justify-start font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft"
           >
             <li>Two AI lenses</li>
             <li>Your words, your data</li>
           </ul>
         </div>
 
-        {/* RIGHT — rotating seal + live journal preview */}
-        <div ref={stageRef} className="relative">
+        {/* RIGHT — rotating seal + oversized journal page */}
+        <div ref={stageRef} className="relative pb-8">
           <div
             data-seal
-            className="absolute -top-10 right-0 md:-right-6 z-20 w-24 h-24 md:w-28 md:h-28 text-sepia pointer-events-none"
+            className="absolute -top-12 -right-2 md:-right-8 z-20 w-28 h-28 md:w-32 md:h-32 text-sepia pointer-events-none"
             aria-hidden="true"
           >
             <svg viewBox="0 0 120 120" className="seal-disc w-full h-full">
@@ -279,19 +287,51 @@ export default function Hero() {
           <div
             ref={cardRef}
             data-card
-            className="card-vintage p-5 md:p-6 ruled-paper will-change-transform"
+            className="card-vintage ruled-paper relative flex min-h-[440px] md:min-h-[560px] flex-col p-6 md:p-9 shadow-[0_36px_80px_-32px_rgba(74,49,32,0.6)] will-change-transform"
             style={{ transformStyle: "preserve-3d" }}
           >
-            <div className="eyebrow mb-3">From the diary</div>
-            <div className="h-[220px] md:h-[240px] overflow-hidden">
-              <JournalAnimation />
+            <div className="grid flex-1 grid-cols-1 gap-7 lg:grid-cols-[1.28fr_0.72fr] lg:gap-9">
+              <div className="flex min-h-0 flex-col">
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="eyebrow">From the diary</span>
+                  <span className="font-mono text-[11px] text-ink-faint">07 · 02 · 2026</span>
+                </div>
+                <div className="mt-5 min-h-[300px] flex-1 overflow-hidden md:min-h-[400px]">
+                  <JournalAnimation />
+                </div>
+              </div>
+
+              {/* Margin notes are part of the same page, not a nested card. */}
+              <div className="hidden min-h-0 flex-col gap-5 border-l border-sepia/15 pl-7 lg:flex">
+                <span className="eyebrow">In the margin</span>
+                <p className="font-display text-lg italic leading-relaxed text-sepia">
+                  Pattern found: rest is not a failure. One thing finished is a full day.
+                </p>
+                <div className="h-px w-full bg-sepia/15" />
+                <div className="flex flex-col gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-soft">
+                  <span>Mood — steady</span>
+                  <span>Goal — one thing done ✓</span>
+                  <span>Lens — lifestyle</span>
+                </div>
+                <div className="mt-auto flex flex-wrap gap-2">
+                  {["rest", "focus", "one thing done"].map((t) => (
+                    <span
+                      key={t}
+                      className="rounded-full bg-sepia/12 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-sepia"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="mt-5">
-            <Link href="/journal" className="btn-vintage w-full">
-              Test out the journal!
-            </Link>
+          <div
+            data-note
+            className="absolute -bottom-7 -left-3 md:-left-8 max-w-[16rem] -rotate-3 rounded-xl bg-espresso px-5 py-3 text-parchment shadow-[0_18px_40px_-16px_rgba(74,49,32,0.9)]"
+          >
+            <p className="font-display text-sm italic md:text-base">Imperfect, but done.</p>
           </div>
         </div>
       </div>

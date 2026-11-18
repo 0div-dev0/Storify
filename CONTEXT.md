@@ -15,7 +15,8 @@ and an AI turns your entries into either a *lifestyle analysis* or a *story*.
 - **Stack:** Next.js 16 (App Router, Turbopack), React 19, Tailwind CSS v4, MongoDB via Mongoose.
 - **AI:** OpenRouter (`google/gemini-2.5-flash`) for generation; keyword-matching for goal analysis.
 - **Motion:** GSAP 3.15 (`gsap` + ScrollTrigger + SplitText) drives the `/` landing page.
-  See `lib/gsap.js` and §7 for the conventions.
+  `components/landing/SectionChoreography.js` owns between-section transitions,
+  directional scroll lean, and the chapter HUD. See `lib/gsap.js` and §7.
 - **No auth.** Login/register/NextAuth/email verification were fully removed — the app is
   **single-user**. There is no session, no user id, no route protection.
 - **No API keys beyond two** (see §6). Everything else is client/server local.
@@ -43,7 +44,7 @@ app/
   actions/
     llm.js             Server action (OpenRouter) — currently UNUSED/dead code.
 components/            All UI. See §4.
-  landing/             ★ The `/` landing page — see §4b.
+  landing/             ★ The `/` landing page — see §4b. Includes SectionChoreography.js.
 lib/
   gsap.js              ★ GSAP entry: registers ScrollTrigger + SplitText, exports
                       `gsap`, `useIsoLayoutEffect`, `useScrollRefresh`.
@@ -108,11 +109,19 @@ All are client components animated with GSAP.
 | `Ticker` | Infinite type marquee band (`bg-mahogany` / `bg-cocoa`) | `xPercent` loop, duplicated track for a seamless -50% wrap |
 | `What` | "What it is" (`bg-tan`) | Copy reveal, ruled-line `scaleX` wipe, specimen-page parallax, icon ink-pop |
 | `Why` | "Why keep one" (`bg-paper`) | Cards deal in with rotation, number counters, stat-rule sweep |
-| `How` | "How to use it" (`bg-espresso`, `#how`) | Scroll-scrubbed connector line, staggered step drop-in, numeral roll |
+| `How` | "How to use it" (`bg-espresso`, `#how`) | **Pinned horizontal scroll on desktop** (vertical scroll drives a horizontal track via `containerAnimation`); cards zoom/spin in and out. Vertical staggered fallback below 1024px. |
 | `Contact` | "Say hello" (`bg-clay`) | Field stagger, success-state pop. Submits via `mailto:` (no backend) |
 | `Footer` | `bg-espresso` | Column stagger, rotating diamond |
+| `SectionChoreography` | Fixed overlay, rendered last in `app/page.js` | Between-chapter zoom → spin → slide exit with a sweeping veil; velocity/direction lean on `[data-directional]` elements; chapter HUD. Reads the `data-chapter` wrappers in `app/page.js`. |
 
 **Anchors:** `#top` (page wrapper) and `#how` (`How` section). Keep them in sync with any in-page links.
+
+**Chapter wrappers:** every landing section is wrapped in `<div data-chapter="Label">` in
+`app/page.js`. `SectionChoreography` animates the **inner** `[data-chapter-visual]`
+element, never the wrapper's layout box, so pins and anchors keep their measurements.
+Mark a visual `data-chapter-flat` (as `How` does) to keep the global zoom/spin gentle
+inside a pinned section. Render `SectionChoreography` last among siblings so its
+ScrollTriggers are created after the pinned horizontal triggers.
 
 ---
 
@@ -181,6 +190,10 @@ Only two keys, both required:
     `"(prefers-reduced-motion: no-preference)"` and return the cleanup from
     `mm.add(...)`. That way **reduced-motion users get fully visible, un-animated
     content** — never `gsap.set(..., {opacity: 0})` outside that branch.
+  - For pinned horizontal scroll, the track tween must use `ease: "none"` and
+    per-card triggers must set `containerAnimation` to that tween. `How` uses the
+    default `fixed` pin because the global chapter transform is on a child of
+    the pinned section, not an ancestor.
   - Scope with `gsap.context(() => {...}, rootRef)` and select via `data-*`
     attributes (never bare class names — Tailwind classes change often).
   - `@gsap/react` is **not installed** (registry was unreachable); use
@@ -219,5 +232,11 @@ npm run start   # serve the production build
   invalid at computed-value time. They are now self-contained stacks.
 - **GSAP installed offline:** `gsap@3.15.1` came from the local npm cache;
   `@gsap/react` was not cached, so the `useGSAP()` hook is intentionally not used.
+- **Landing motion overhaul:** enlarged the hero journal page, unified CTA alignment
+  (`.landing-cta`) and the `max-w-[88rem]` container across sections. Added
+  `SectionChoreography.js` for zoom → multi-axis spin → slide exits, a sweeping veil,
+  velocity/directional lean, and a chapter HUD. `How` is now a pinned horizontal
+  scroller on desktop with a vertical fallback. Added `data-chapter` wrappers in
+  `app/page.js` and `data-chapter-visual` / `data-chapter-flat` hooks in sections.
 
 *When you change any of the above, update the relevant section AND append a line here.*

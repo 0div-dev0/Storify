@@ -105,7 +105,7 @@ export default function Contact() {
 
   return (
     <section ref={root} className="bg-clay py-20 md:py-28 px-6 md:px-14">
-      <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.05fr] gap-14 lg:gap-20 items-start">
+      <div data-chapter-visual className="max-w-[88rem] mx-auto grid lg:grid-cols-[1fr_1.05fr] gap-14 lg:gap-20 items-start">
         {/* LEFT — invitation */}
         <div className="flex flex-col gap-6 relative">
           <span data-reveal className="eyebrow">
@@ -144,6 +144,7 @@ export default function Contact() {
           {/* Quill ornament */}
           <div
             data-quill
+            data-directional
             aria-hidden="true"
             className="absolute -top-6 right-2 lg:right-10 text-sepia/25 text-6xl md:text-7xl pointer-events-none select-none"
           >

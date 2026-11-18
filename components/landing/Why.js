@@ -40,37 +40,8 @@ export default function Why() {
 
     mm.add("(prefers-reduced-motion: no-preference)", () => {
       const ctx = gsap.context(() => {
-        /* Headline + lead-in */
-        gsap.from("[data-reveal]", {
-          y: 40,
-          opacity: 0,
-          duration: 0.85,
-          stagger: 0.12,
-          ease: "power3.out",
-          scrollTrigger: { trigger: root.current, start: "top 76%" },
-        });
-
-        /* Reason cards deal in like cards onto a table */
-        gsap.from("[data-reason]", {
-          y: 56,
-          opacity: 0,
-          rotate: (i) => (i % 2 ? 1.6 : -1.6),
-          duration: 0.85,
-          stagger: 0.11,
-          ease: "power3.out",
-          scrollTrigger: { trigger: "[data-reasons]", start: "top 82%" },
-        });
-
-        /* Ink-pop the icons once the cards have landed */
-        gsap.from("[data-reason-icon]", {
-          scale: 0.3,
-          opacity: 0,
-          duration: 0.6,
-          stagger: 0.11,
-          delay: 0.35,
-          ease: "back.out(2.4)",
-          scrollTrigger: { trigger: "[data-reasons]", start: "top 82%" },
-        });
+        /* Headline, cards, and progressive word pops are owned by
+           SectionChoreography — this section keeps only its own details. */
 
         /* Number counters */
         gsap.utils.toArray("[data-count]").forEach((el) => {
@@ -87,6 +58,19 @@ export default function Why() {
             },
             scrollTrigger: { trigger: el, start: "top 88%" },
           });
+        });
+
+        /* Reason cards also travel left as the section passes — horizontal
+           movement inside the section, independent of the between-section exits. */
+        gsap.to("[data-reasons]", {
+          xPercent: -11,
+          ease: "none",
+          scrollTrigger: {
+            trigger: root.current,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1,
+          },
         });
 
         /* Stat strip underline sweep */
@@ -109,7 +93,7 @@ export default function Why() {
 
   return (
     <section ref={root} id="why" className="bg-paper py-20 md:py-28 px-6 md:px-14 scroll-mt-20">
-      <div className="max-w-7xl mx-auto">
+      <div data-chapter-visual className="max-w-[88rem] mx-auto">
         {/* Heading */}
         <div className="max-w-3xl flex flex-col gap-5">
           <span data-reveal className="eyebrow">
@@ -162,6 +146,7 @@ export default function Why() {
               <div key={s.label} className="flex flex-col items-center text-center gap-2">
                 <span
                   data-count={s.value}
+                  data-directional
                   className="font-display font-black text-5xl md:text-6xl text-sepia tabular-nums"
                 >
                   {s.value}

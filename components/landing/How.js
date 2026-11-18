@@ -4,7 +4,7 @@ import React, { useRef } from "react";
 import Link from "next/link";
 import { gsap, useIsoLayoutEffect } from "@/lib/gsap";
 import { floatLoop } from "@/lib/motion";
-import { FaPenNib, FaBullseye, FaRobot, FaBookOpen } from "react-icons/fa";
+import { FaPenNib, FaBullseye, FaRobot, FaBookOpen, FaArrowRight } from "react-icons/fa";
 
 const STEPS = [
   {
@@ -39,80 +39,124 @@ export default function How() {
   useIsoLayoutEffect(() => {
     const mm = gsap.matchMedia();
 
-    mm.add("(prefers-reduced-motion: no-preference)", () => {
+    /* ---- Desktop: pinned horizontal scroll ------------------------------- */
+    mm.add("(prefers-reduced-motion: no-preference) and (min-width: 1024px)", () => {
       const ctx = gsap.context(() => {
-        gsap.set("[data-connector]", { scaleX: 0 });
+        const track = root.current.querySelector("[data-track]");
+        const viewport = root.current.querySelector("[data-track-viewport]");
+        const progress = root.current.querySelector("[data-progress]");
+        if (!track || !viewport) return;
 
-        gsap.from("[data-reveal]", {
-          y: 40,
-          opacity: 0,
-          duration: 0.85,
-          stagger: 0.12,
-          ease: "power3.out",
-          scrollTrigger: { trigger: root.current, start: "top 76%" },
-        });
+        const distance = () => Math.max(0, track.scrollWidth - viewport.clientWidth + 64);
+        const scrollLength = () => Math.max(window.innerHeight, distance() + window.innerHeight * 0.45);
 
-        /* The connector line draws itself across the four steps */
-        gsap.to("[data-connector]", {
-          scaleX: 1,
+        gsap.set(progress, { scaleX: 0, transformOrigin: "left center" });
+
+        // Vertical scrolling drives the track sideways. ease:"none" is required
+        // for a 1:1 scroll-to-position mapping.
+        const horizontal = gsap.to(track, {
+          x: () => -distance(),
           ease: "none",
           scrollTrigger: {
-            trigger: "[data-steps]",
-            start: "top 78%",
-            end: "bottom 65%",
-            scrub: 0.6,
+            trigger: root.current,
+            start: "top top",
+            end: () => `+=${scrollLength()}`,
+            pin: true,
+            pinSpacing: true,
+            anticipatePin: 1,
+            scrub: 0.8,
+            invalidateOnRefresh: true,
           },
         });
 
-        /* Steps drop into place one after another */
-        gsap.from("[data-step]", {
-          y: 64,
-          opacity: 0,
-          duration: 0.85,
-          stagger: 0.14,
+        gsap.to(progress, {
+          scaleX: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: root.current,
+            start: "top top",
+            end: () => `+=${scrollLength()}`,
+            scrub: 0.8,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        // Each card is revealed, then spun off-axis as it exits the viewport.
+        gsap.utils.toArray("[data-step]").forEach((step) => {
+          const inner = step.querySelector("[data-step-inner]");
+          if (!inner) return;
+
+          gsap.fromTo(
+            inner,
+            { y: 68, autoAlpha: 0, rotation: -7, scale: 0.86 },
+            {
+              y: 0,
+              autoAlpha: 1,
+              rotation: 0,
+              scale: 1,
+              duration: 0.9,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: step,
+                containerAnimation: horizontal,
+                start: "left 92%",
+                toggleActions: "play none none reverse",
+              },
+            }
+          );
+
+          gsap.to(step, {
+            scale: 1.3,
+            autoAlpha: 0.12,
+            rotationY: -280,
+            rotationX: 130,
+            xPercent: -22,
+            ease: "none",
+            scrollTrigger: {
+              trigger: step,
+              containerAnimation: horizontal,
+              start: "right 38%",
+              end: "right -8%",
+              scrub: true,
+            },
+          });
+        });
+
+        floatLoop("[data-step-icon]", { amplitude: 2.2, startDelay: 1.4, stagger: 0.35 });
+      }, root);
+      return () => ctx.revert();
+    });
+
+    /* ---- Small screens: same content, vertical directional reveals ------- */
+    mm.add("(prefers-reduced-motion: no-preference) and (max-width: 1023px)", () => {
+      const ctx = gsap.context(() => {
+        gsap.from("[data-reveal]", {
+          y: 38,
+          autoAlpha: 0,
+          duration: 0.8,
+          stagger: 0.1,
           ease: "power3.out",
-          scrollTrigger: { trigger: "[data-steps]", start: "top 80%" },
+          scrollTrigger: { trigger: root.current, start: "top 78%" },
         });
 
-        /* Big numerals roll up as the line passes them */
-        gsap.from("[data-step-num]", {
-          yPercent: 100,
-          opacity: 0,
-          duration: 0.9,
-          stagger: 0.14,
-          ease: "power4.out",
-          scrollTrigger: { trigger: "[data-steps]", start: "top 80%" },
+        gsap.from("[data-step]", {
+          y: 70,
+          autoAlpha: 0,
+          rotation: -4,
+          duration: 0.8,
+          stagger: 0.12,
+          ease: "power3.out",
+          scrollTrigger: { trigger: "[data-track]", start: "top 84%" },
         });
 
-        /* Step badges pulse once, staggered */
         gsap.from("[data-step-icon]", {
           scale: 0.3,
-          rotate: -40,
-          opacity: 0,
+          rotation: -45,
+          autoAlpha: 0,
           duration: 0.7,
-          stagger: 0.14,
-          delay: 0.25,
+          stagger: 0.12,
           ease: "back.out(2.4)",
-          scrollTrigger: { trigger: "[data-steps]", start: "top 80%" },
-        });
-
-        /* The badges hover above the connector line, one after another.
-           Their entrance tween owns scale/rotation/opacity; the loop only
-           moves them on Y, so the two never write the same property. */
-        floatLoop("[data-step-icon]", {
-          amplitude: 2.4,
-          startDelay: 2.6,
-          stagger: 0.55,
-          duration: 4.2,
-        });
-
-        /* Closing CTA */
-        gsap.from("[data-cta]", {
-          y: 30,
-          opacity: 0,
-          duration: 0.8,
-          ease: "power3.out",
-          scrollTrigger: { trigger: "[data-cta]", start: "top 90%" },
+          scrollTrigger: { trigger: "[data-track]", start: "top 84%" },
         });
       }, root);
       return () => ctx.revert();
@@ -125,12 +169,17 @@ export default function How() {
     <section
       ref={root}
       id="how"
-      className="bg-espresso py-20 md:py-28 px-6 md:px-14 scroll-mt-20"
+      className="relative flex items-center overflow-hidden bg-espresso py-20 md:py-28 lg:h-screen lg:py-0 scroll-mt-20"
     >
-      <div className="max-w-7xl mx-auto">
-        {/* Heading */}
-        <div className="max-w-3xl flex flex-col gap-5">
-          <span data-reveal className="eyebrow-light">
+      {/* data-chapter-flat keeps the global zoom transition from rotating the
+          pinned horizontal track out from under its ScrollTrigger. */}
+      <div
+        data-chapter-visual
+        data-chapter-flat
+        className="w-full max-w-[88rem] mx-auto px-6 md:px-14"
+      >
+        <div className="max-w-3xl flex flex-col gap-5 pt-4 lg:pt-10">
+          <span data-reveal className="eyebrow-light" data-directional>
             How to use it
           </span>
           <h2
@@ -146,58 +195,45 @@ export default function How() {
           </p>
         </div>
 
-        {/* Steps */}
-        <div data-steps className="relative mt-14 md:mt-20">
-          {/* Connector line — drawn on scroll */}
-          <div
-            data-connector
-            aria-hidden="true"
-            className="hidden md:block absolute left-0 right-0 top-[34px] h-px bg-gradient-to-r from-gold/10 via-gold/60 to-gold/10 origin-left will-change-transform"
-          />
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-8">
+        <div data-track-viewport className="relative mt-14 overflow-hidden lg:mt-10">
+          <div data-track className="flex flex-col gap-10 lg:w-max lg:flex-row lg:gap-8">
             {STEPS.map((s) => (
-              <div key={s.n} data-step className="relative flex flex-col gap-4">
-                {/* Badge sits on the connector */}
-                <div className="flex items-center gap-4">
-                  <span
-                    data-step-icon
-                    className="relative z-10 w-[68px] h-[68px] shrink-0 rounded-full bg-cocoa text-gold flex items-center justify-center text-xl shadow-[0_10px_26px_-10px_rgba(0,0,0,0.7)]"
-                    aria-hidden="true"
-                  >
-                    {s.icon}
-                  </span>
-                  <span className="lg:hidden inline-block overflow-hidden font-display font-black text-4xl text-parchment/25">
-                    <span data-step-num className="inline-block">
+              <div key={s.n} data-step className="w-full lg:w-[30rem] lg:shrink-0 will-change-transform">
+                <div
+                  data-step-inner
+                  className="flex h-full min-h-[19rem] flex-col gap-5 rounded-2xl bg-cocoa/55 p-7 md:p-8"
+                >
+                  <div className="flex items-center justify-between">
+                    <span
+                      data-step-icon
+                      className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-espresso text-xl text-gold shadow-[0_12px_30px_-12px_rgba(0,0,0,0.8)]"
+                      aria-hidden="true"
+                    >
+                      {s.icon}
+                    </span>
+                    <span className="font-display font-black text-5xl leading-none text-parchment/20">
                       {s.n}
                     </span>
-                  </span>
+                  </div>
+                  <h3 className="font-display font-bold text-xl text-parchment">{s.title}</h3>
+                  <p className="font-body text-sm text-tan/75 leading-[1.85]">{s.body}</p>
                 </div>
-
-                <span className="hidden lg:block overflow-hidden">
-                  <span
-                    data-step-num
-                    className="block font-display font-black text-6xl leading-none text-parchment/25"
-                  >
-                    {s.n}
-                  </span>
-                </span>
-
-                <h3 className="font-display font-bold text-xl text-parchment">
-                  {s.title}
-                </h3>
-                <p className="font-body text-sm text-tan/75 leading-[1.85]">{s.body}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Closing CTA */}
-        <div data-cta className="mt-16 md:mt-24 flex flex-col items-center text-center gap-5">
-          <div className="ornament w-full max-w-xl">
-            <span className="font-display italic text-tan/70 text-sm">Ready when you are</span>
+        <div className="mt-10 hidden items-center gap-4 lg:flex">
+          <div className="h-px flex-1 bg-gold/20">
+            <div data-progress className="h-full w-full bg-gold" />
           </div>
-          <Link href="/journal" className="btn-vintage px-10 py-4 text-base">
+          <span data-directional className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-gold/80">
+            Scroll <FaArrowRight />
+          </span>
+        </div>
+
+        <div data-cta className="mt-12 flex flex-col items-center gap-4 text-center lg:mt-8">
+          <Link href="/journal" className="btn-vintage landing-cta">
             Open the journal
           </Link>
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tan/70">

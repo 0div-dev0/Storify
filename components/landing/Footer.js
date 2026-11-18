@@ -73,7 +73,7 @@ export default function Footer() {
 
   return (
     <footer ref={root} className="bg-espresso px-6 md:px-14 pt-16 pb-24 md:pb-10">
-      <div className="max-w-7xl mx-auto">
+      <div data-chapter-visual className="max-w-[88rem] mx-auto">
         {/* Top */}
         <div className="grid gap-12 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
           <div data-reveal className="flex flex-col gap-5 max-w-sm">

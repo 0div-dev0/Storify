@@ -54,9 +54,11 @@ export default function Ticker({ items, reverse = false, className = "" }) {
       className={`relative overflow-hidden py-4 md:py-5 select-none ${className}`}
       aria-hidden="true"
     >
-      <div data-track className="flex w-max will-change-transform">
-        {row}
-        {row}
+      <div data-chapter-visual className="w-max will-change-transform">
+        <div data-track className="flex w-max will-change-transform">
+          {row}
+          {row}
+        </div>
       </div>
     </div>
   );
