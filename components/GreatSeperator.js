@@ -2,9 +2,7 @@ import React from 'react'
 
 const GreatSeperator = () => {
   return (
-    <div className='h-1 w-100% bg-gray-800'>
-      
-    </div>
+    <div className="ornament w-full px-6 my-4"></div>
   )
 }
 

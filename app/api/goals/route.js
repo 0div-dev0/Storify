@@ -1,32 +1,56 @@
-import connectMongo from "@/lib/dbConfig";
-import { Goal } from "@/models/Goal";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextResponse } from "next/server";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  doc,
+  deleteDoc,
+  query,
+  where,
+} from "firebase/firestore";
 
+function toIsoDate(val) {
+  if (!val) return new Date().toISOString();
+  if (typeof val === "string") return val;
+  if (val.toDate && typeof val.toDate === "function") return val.toDate().toISOString();
+  if (val instanceof Date) return val.toISOString();
+  return new Date(val).toISOString();
+}
+
+// GET /api/goals — fetch all goals
 export async function GET(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
-    const date = searchParams.get("date"); // Optional: fetch goals for a specific date
+    const userId = searchParams.get("userId") || req.headers.get("x-user-id");
 
-    await connectMongo();
-    let query = { userId: session.user.id };
-
-    if (date) {
-      const d = new Date(date);
-      // For daily: startDate must match date
-      // For weekly: startDate must be in the same week
-      // For monthly: startDate must be in the same month
-      // Simplified: we'll fetch all and filter in JS or do complex mongo query
-      // Let's do a broader fetch for the calendar to handle coloring multiple days
+    const goalsRef = collection(db, "goals");
+    let q = query(goalsRef);
+    if (userId) {
+      q = query(goalsRef, where("userId", "==", userId));
     }
 
-    const goals = await Goal.find(query).sort({ createdAt: -1 });
+    const snap = await getDocs(q);
+    const goals = [];
+
+    snap.forEach((d) => {
+      const data = d.data();
+      goals.push({
+        _id: d.id,
+        id: d.id,
+        title: data.title,
+        frequency: data.frequency || "daily",
+        startDate: toIsoDate(data.startDate),
+        endDate: data.endDate ? toIsoDate(data.endDate) : null,
+        completedDates: data.completedDates || [],
+        createdAt: toIsoDate(data.createdAt),
+        updatedAt: toIsoDate(data.updatedAt),
+        userId: data.userId || null,
+      });
+    });
+
+    // Sort by createdAt descending in JavaScript
+    goals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return NextResponse.json({ goals }, { status: 200 });
   } catch (error) {
@@ -35,19 +59,14 @@ export async function GET(req) {
   }
 }
 
+// POST /api/goals — create a new goal
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { title, frequency, targetDate, userId } = await req.json();
 
-    const { title, frequency, targetDate } = await req.json();
     if (!title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
-
-    await connectMongo();
 
     let startDate;
     if (targetDate) {
@@ -67,12 +86,24 @@ export async function POST(req) {
       startDate.setDate(1);
     }
 
-    const goal = await Goal.create({
-      userId: session.user.id,
+    const now = new Date().toISOString();
+    const newGoalData = {
       title,
-      frequency,
-      startDate,
-    });
+      frequency: frequency || "daily",
+      startDate: startDate.toISOString(),
+      completedDates: [],
+      createdAt: now,
+      updatedAt: now,
+      userId: userId || null,
+    };
+
+    const docRef = await addDoc(collection(db, "goals"), newGoalData);
+
+    const goal = {
+      _id: docRef.id,
+      id: docRef.id,
+      ...newGoalData,
+    };
 
     return NextResponse.json({ goal }, { status: 201 });
   } catch (error) {
@@ -81,13 +112,9 @@ export async function POST(req) {
   }
 }
 
+// DELETE /api/goals?id=... — delete a goal by ID
 export async function DELETE(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -95,8 +122,8 @@ export async function DELETE(req) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    await connectMongo();
-    await Goal.deleteOne({ _id: id, userId: session.user.id });
+    const docRef = doc(db, "goals", id);
+    await deleteDoc(docRef);
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
@@ -104,4 +131,3 @@ export async function DELETE(req) {
     return NextResponse.json({ error: "Failed to delete goal" }, { status: 500 });
   }
 }
-

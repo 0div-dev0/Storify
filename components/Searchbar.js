@@ -1,13 +1,16 @@
-import React, {useState} from 'react'
+import React from 'react'
 
 const Searchbar = () => {
-    const [text, setText] = useState("")
-
   return (
-    <div className='bg-gray-950 rounded-lg border-2 border-gray-800 relative w-100 h-13 text-2xl  items-center flex gap-2'>
+    <div className="card-vintage w-full max-w-xs h-11 flex items-center gap-2 px-4">
       <label htmlFor="search-input" className="sr-only">Search</label>
-      <input id="search-input" type="text" className='w-full h-full bg-gray-950 rounded-lg'/>
-      <div className="px-5">/</div>
+      <input
+        id="search-input"
+        type="text"
+        placeholder="Search…"
+        className="w-full h-full bg-transparent text-ink placeholder:text-ink-faint font-body focus:outline-none"
+      />
+      <kbd className="text-ink-faint font-mono text-xs bg-vellum rounded px-1.5 py-0.5">/</kbd>
     </div>
   )
 }

@@ -1,28 +1,39 @@
-import connectMongo from "@/lib/dbConfig";
-import { Journal } from "@/models/Journal";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextResponse } from "next/server";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+
+function toIsoDate(val) {
+  if (!val) return new Date().toISOString();
+  if (typeof val === "string") return val;
+  if (val.toDate && typeof val.toDate === "function") return val.toDate().toISOString();
+  if (val instanceof Date) return val.toISOString();
+  return new Date(val).toISOString();
+}
 
 // GET /api/journals/[id] — get a single journal with full content
 export async function GET(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ error: "Journal ID is required" }, { status: 400 });
     }
 
-    await connectMongo();
-    const { id } = await params;
+    const docRef = doc(db, "journals", id);
+    const snap = await getDoc(docRef);
 
-    const journal = await Journal.findOne({
-      _id: id,
-      userId: session.user.id,
-    }).lean();
-
-    if (!journal) {
+    if (!snap.exists()) {
       return NextResponse.json({ error: "Journal not found" }, { status: 404 });
     }
+
+    const data = snap.data();
+    const journal = {
+      _id: snap.id,
+      id: snap.id,
+      ...data,
+      date: toIsoDate(data.date),
+      createdAt: toIsoDate(data.createdAt),
+      updatedAt: toIsoDate(data.updatedAt),
+    };
 
     return NextResponse.json({ journal }, { status: 200 });
   } catch (error) {
@@ -31,14 +42,9 @@ export async function GET(req, { params }) {
   }
 }
 
-// PUT /api/journals/[id] — update a journal (keeps original date)
+// PUT /api/journals/[id] — update a journal entry
 export async function PUT(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { title, content, plainText } = await req.json();
     const { id } = await params;
 
@@ -46,44 +52,55 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: "Content is required" }, { status: 400 });
     }
 
-    await connectMongo();
+    const docRef = doc(db, "journals", id);
+    const snap = await getDoc(docRef);
 
-    const journal = await Journal.findOneAndUpdate(
-      { _id: id, userId: session.user.id },
-      { title, content, plainText: plainText || "" },
-      { new: true }
-    );
-
-    if (!journal) {
+    if (!snap.exists()) {
       return NextResponse.json({ error: "Journal not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ journal }, { status: 200 });
+    const now = new Date().toISOString();
+    const updateData = {
+      title: title !== undefined ? title : (snap.data().title || "Untitled Entry"),
+      content,
+      plainText: plainText || "",
+      updatedAt: now,
+    };
+
+    await updateDoc(docRef, updateData);
+
+    const updatedJournal = {
+      _id: id,
+      id: id,
+      ...snap.data(),
+      ...updateData,
+      date: toIsoDate(snap.data().date),
+      createdAt: toIsoDate(snap.data().createdAt),
+    };
+
+    return NextResponse.json({ journal: updatedJournal }, { status: 200 });
   } catch (error) {
     console.error("PUT /api/journals/[id] error:", error);
     return NextResponse.json({ error: "Failed to update journal" }, { status: 500 });
   }
 }
 
-// DELETE /api/journals/[id]
+// DELETE /api/journals/[id] — delete a journal entry
 export async function DELETE(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ error: "Journal ID is required" }, { status: 400 });
     }
 
-    await connectMongo();
-    const { id } = await params;
+    const docRef = doc(db, "journals", id);
+    const snap = await getDoc(docRef);
 
-    const journal = await Journal.findOneAndDelete({
-      _id: id,
-      userId: session.user.id,
-    });
-
-    if (!journal) {
+    if (!snap.exists()) {
       return NextResponse.json({ error: "Journal not found" }, { status: 404 });
     }
+
+    await deleteDoc(docRef);
 
     return NextResponse.json({ message: "Journal deleted" }, { status: 200 });
   } catch (error) {

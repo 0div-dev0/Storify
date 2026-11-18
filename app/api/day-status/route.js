@@ -1,25 +1,27 @@
-import connectMongo from "@/lib/dbConfig";
-import { DayStatus } from "@/models/DayStatus";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextResponse } from "next/server";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
-export async function GET() {
+export async function GET(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId") || req.headers.get("x-user-id");
+
+    const statusRef = collection(db, "dayStatuses");
+    let q = query(statusRef);
+    if (userId) {
+      q = query(statusRef, where("userId", "==", userId));
     }
 
-    await connectMongo();
-
-    const statuses = await DayStatus.find({ userId: session.user.id }).lean();
-
-    // Return as a map: { "YYYY-MM-DD": "green"|"yellow"|"red" }
+    const snap = await getDocs(q);
     const statusMap = {};
-    for (const s of statuses) {
-      statusMap[s.date] = s.status;
-    }
+
+    snap.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data && data.date && data.status) {
+        statusMap[data.date] = data.status;
+      }
+    });
 
     return NextResponse.json({ statuses: statusMap }, { status: 200 });
   } catch (error) {

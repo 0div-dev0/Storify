@@ -14,9 +14,19 @@ const paragraphs = [
 const JournalAnimation = () => {
   const [paragraphIndex, setParagraphIndex] = useState(0)
   const [charIndex, setCharIndex] = useState(0)
+  const [reducedMotion, setReducedMotion] = useState(false)
+
+  // Reduced-motion readers get the finished page instead of a typewriter
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const sync = () => setReducedMotion(query.matches)
+    sync()
+    query.addEventListener('change', sync)
+    return () => query.removeEventListener('change', sync)
+  }, [])
 
   useEffect(() => {
-    if (paragraphIndex >= paragraphs.length) return
+    if (reducedMotion || paragraphIndex >= paragraphs.length) return
 
     const currentText = paragraphs[paragraphIndex]
 
@@ -35,20 +45,25 @@ const JournalAnimation = () => {
 
       return () => clearTimeout(timeout)
     }
-  }, [charIndex, paragraphIndex])
+  }, [charIndex, paragraphIndex, reducedMotion])
+
+  const finishedParagraphs = reducedMotion ? paragraphs : paragraphs.slice(0, paragraphIndex)
+  const typingParagraph =
+    !reducedMotion && paragraphIndex < paragraphs.length ? paragraphs[paragraphIndex] : null
 
   return (
-      <div className="flex flex-col gap-3 bg-gray-700 relative rounded-xl py-3 px-5 overflow-hidden h-full">
-        <FaPenNib className="absolute top-2 right-2" size="30"/>
-      {paragraphs.slice(0, paragraphIndex).map((p, i) => (
-        <div key={i}>{p}</div> 
+    <div className="flex flex-col gap-3 relative overflow-hidden h-full font-body text-ink leading-relaxed">
+      <FaPenNib className="absolute top-0 right-0 text-sepia/50" size="22" />
+      {finishedParagraphs.map((p, i) => (
+        <div key={i} className={i === 0 ? "font-display font-bold text-sepia" : ""}>{p}</div>
       ))}
 
-      {paragraphIndex < paragraphs.length && (
+      {typingParagraph !== null && (
         <div>
-          {paragraphs[paragraphIndex].slice(0, charIndex)}
-          <span className="animate-pulse">        <FaPenNib className="inline" size="15"/>
-</span>
+          {typingParagraph.slice(0, charIndex)}
+          <span className="animate-pulse inline-flex items-center">
+            <FaPenNib className="inline text-sepia" size="13" />
+          </span>
         </div>
       )}
     </div>

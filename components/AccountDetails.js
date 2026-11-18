@@ -1,6 +1,8 @@
 "use client"
 import React, { useState, useCallback, useMemo, memo } from 'react'
 import { useRouter } from "next/navigation"
+import { useForm } from 'react-hook-form'
+import { useAuth } from '@/lib/AuthContext'
 import { 
   IoCalendarOutline, 
   IoBookOutline, 
@@ -27,30 +29,37 @@ function generateCacheKey(startDate, endDate, mode, length, theme) {
   return `${startDate}|${endDate}|${mode}|${length}|${theme}`
 }
 
-const AccountDetails = memo(function AccountDetails({ email }) {
+const AccountDetails = memo(function AccountDetails() {
   const router = useRouter()
-  
-  // Date states initialized to a 7-day range by default
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date()
-    d.setDate(d.getDate() - 7)
-    return d.toISOString().split('T')[0]
-  })
-  const [endDate, setEndDate] = useState(() => {
-    return new Date().toISOString().split('T')[0]
+  const { user, profile } = useAuth()
+  const displayName = profile?.name || user?.displayName || (user?.email ? user.email.split('@')[0] : 'Writer')
+
+  const { register, handleSubmit, setValue, watch } = useForm({
+    defaultValues: {
+      startDate: (() => {
+        const d = new Date()
+        d.setDate(d.getDate() - 7)
+        return d.toISOString().split('T')[0]
+      })(),
+      endDate: new Date().toISOString().split('T')[0],
+      mode: 'feedback',
+      length: 'medium',
+      theme: '',
+    }
   })
 
+  const startDate = watch('startDate')
+  const endDate = watch('endDate')
+  const mode = watch('mode')
+  const length = watch('length')
+  const theme = watch('theme')
+
   const [activePreset, setActivePreset] = useState('7d')
-  const [mode, setMode] = useState('feedback') // 'feedback' | 'story'
-  const [length, setLength] = useState('medium') // 'short' | 'medium' | 'long'
-  const [theme, setTheme] = useState('')
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [result, setResult] = useState(null)
   const [errorMsg, setErrorMsg] = useState(null)
   const [journalCount, setJournalCount] = useState(0)
-
-  const displayName = email ? email.split('@')[0] : 'Writer'
 
   // Sync date inputs when preset is clicked
   const handlePresetClick = useCallback((preset) => {
@@ -68,26 +77,22 @@ const AccountDetails = memo(function AccountDetails({ email }) {
       start = new Date(today.getFullYear(), today.getMonth(), 1)
     }
 
-    setStartDate(start.toISOString().split('T')[0])
-    setEndDate(today.toISOString().split('T')[0])
-  }, [])
-
-  // Trigger custom dates input changes
-  const handleDateChange = useCallback((type, val) => {
-    setActivePreset('custom')
-    if (type === 'start') {
-      setStartDate(val)
-    } else {
-      setEndDate(val)
-    }
-  }, [])
+    setValue('startDate', start.toISOString().split('T')[0])
+    setValue('endDate', today.toISOString().split('T')[0])
+  }, [setValue])
 
   const handleWriteEntry = useCallback(() => {
     router.push('/journal')
   }, [router])
 
-  const handleGenerate = useCallback(async () => {
-    const cacheKey = generateCacheKey(startDate, endDate, mode, length, theme)
+  const onGenerateSubmit = useCallback(async (formData) => {
+    const sDate = formData.startDate
+    const eDate = formData.endDate
+    const fMode = formData.mode
+    const fLength = formData.length
+    const fTheme = formData.theme
+
+    const cacheKey = generateCacheKey(sDate, eDate, fMode, fLength, fTheme)
     const cached = lifestyleCache.get(cacheKey)
     if (cached) {
       setResult(cached.result)
@@ -105,11 +110,12 @@ const AccountDetails = memo(function AccountDetails({ email }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          startDate,
-          endDate,
-          mode,
-          length,
-          theme
+          startDate: sDate,
+          endDate: eDate,
+          mode: fMode,
+          length: fLength,
+          theme: fTheme,
+          userId: user?.uid,
         })
       })
 
@@ -125,7 +131,6 @@ const AccountDetails = memo(function AccountDetails({ email }) {
       } else {
         setResult(data.result)
         setJournalCount(data.journalCount || 0)
-        // Cache successful results
         lifestyleCache.set(cacheKey, { result: data.result, journalCount: data.journalCount || 0 })
       }
     } catch (err) {
@@ -134,7 +139,7 @@ const AccountDetails = memo(function AccountDetails({ email }) {
     } finally {
       setLoading(false)
     }
-  }, [startDate, endDate, mode, length, theme])
+  }, [user?.uid])
 
   const handleCopy = useCallback(() => {
     if (!result) return
@@ -148,21 +153,21 @@ const AccountDetails = memo(function AccountDetails({ email }) {
     if (!text) return null
     return text.split('\n').map((line, idx) => {
       if (line.startsWith('### ')) {
-        return <h4 key={idx} className="text-md font-bold text-indigo-300 mt-4 mb-2">{line.replace('### ', '')}</h4>
+        return <h4 key={idx} className="text-md font-bold text-sepia mt-4 mb-2 font-display">{line.replace('### ', '')}</h4>
       }
       if (line.startsWith('## ')) {
-        return <h3 key={idx} className="text-lg font-bold text-indigo-400 mt-5 mb-2">{line.replace('## ', '')}</h3>
+        return <h3 key={idx} className="text-lg font-bold text-sepia mt-5 mb-2 font-display">{line.replace('## ', '')}</h3>
       }
       if (line.startsWith('# ')) {
-        return <h2 key={idx} className="text-xl font-bold text-white mt-6 mb-3">{line.replace('# ', '')}</h2>
+        return <h2 key={idx} className="text-xl font-bold text-ink mt-6 mb-3 font-display">{line.replace('# ', '')}</h2>
       }
       if (line.startsWith('- ') || line.startsWith('* ')) {
-        return <li key={idx} className="text-slate-300 ml-4 list-disc my-1">{line.replace(/^[-*]\s+/, '')}</li>
+        return <li key={idx} className="text-ink ml-4 list-disc my-1">{line.replace(/^[-*]\s+/, '')}</li>
       }
       if (line.trim() === '') {
         return <div key={idx} className="h-2.5" />
       }
-      return <p key={idx} className="text-slate-300 leading-relaxed text-sm md:text-base my-2">{line}</p>
+      return <p key={idx} className="text-ink leading-relaxed text-sm md:text-base my-2">{line}</p>
     })
   }, [])
 
@@ -170,20 +175,21 @@ const AccountDetails = memo(function AccountDetails({ email }) {
   const renderedOutput = useMemo(() => renderFormattedText(result), [result, renderFormattedText])
 
   return (
-    <div className="w-full flex-1 flex flex-col gap-6 px-4 md:px-10 py-6 bg-gray-950 min-h-screen text-slate-100 pb-24 md:pb-8">
+    <div className="w-full flex-1 flex flex-col gap-6 px-4 md:px-10 py-6 pb-8 bg-paper min-h-full text-ink">
       {/* 1. Dashboard Greeting Header */}
-      <div className="bg-gradient-to-r from-indigo-950/40 via-purple-950/20 to-slate-950 border border-white/5 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl backdrop-blur-md">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-            Welcome back, <span className="text-indigo-400 capitalize">{displayName}</span>!
+      <div className="card-vintage p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.06] pointer-events-none">
+          <div className="absolute -top-10 -right-10 w-56 h-56 rounded-full bg-sepia blur-3xl"></div>
+        </div>
+        <div className="relative z-10">
+          <span className="eyebrow">The Writer&rsquo;s Desk</span>
+          <h1 className="text-2xl md:text-3xl font-display font-black text-ink tracking-tight flex items-center gap-2 mt-1">
+            Welcome back, <span className="text-terracotta">{displayName}</span>
           </h1>
-          <p className="text-slate-400 text-sm md:text-base mt-2 max-w-xl">
-            "Your life is a compilation of stories waiting to be analyzed, felt, and remembered." Start by writing a new entry or review your habits.
-          </p>
         </div>
         <button
           onClick={handleWriteEntry}
-          className="flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 font-semibold text-white transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98] cursor-pointer hover:shadow-indigo-500/35 self-stretch md:self-auto justify-center text-sm md:text-base"
+          className="btn-vintage relative z-10 self-stretch md:self-auto justify-center text-sm md:text-base cursor-pointer"
         >
           <IoBookOutline size={18} />
           Write a new entry
@@ -194,32 +200,33 @@ const AccountDetails = memo(function AccountDetails({ email }) {
       {/* 2. Main Interface Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Side: Parameters Form */}
-        <div className="lg:col-span-5 bg-white/5 border border-white/10 rounded-3xl p-5 md:p-6 shadow-2xl backdrop-blur-md flex flex-col gap-6">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-white/10">
-            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400">
+        <form onSubmit={handleSubmit(onGenerateSubmit)} className="lg:col-span-5 card-vintage p-5 md:p-6 flex flex-col gap-6">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-sepia/15">
+            <div className="p-2 rounded-md bg-sepia/10 text-sepia">
               <IoSparklesOutline size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Lifestyle Insights</h2>
-              <p className="text-xs text-slate-400">Synthesize your journal data into stories or feedback</p>
+              <h2 className="text-lg font-bold text-ink font-display">Lifestyle Insights</h2>
+              <p className="text-xs text-ink-soft font-body">Synthesize your journal data into stories or feedback</p>
             </div>
           </div>
 
           {/* Time range parameters */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            <label className="eyebrow flex items-center gap-1.5">
               <IoCalendarOutline size={14} /> Time Period
             </label>
             {/* Presets Row */}
             <div className="grid grid-cols-4 gap-1.5 mt-1" role="group" aria-label="Time period presets">
               {PRESETS.map((p) => (
                 <button
+                  type="button"
                   key={p.id}
                   onClick={() => handlePresetClick(p.id)}
-                  className={`text-[11px] md:text-xs font-semibold py-1.5 px-1 rounded-lg transition-all border cursor-pointer ${
+                  className={`text-[11px] md:text-xs font-bold py-1.5 px-1 rounded-md transition-all border cursor-pointer ${
                     activePreset === p.id
-                      ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
-                      : 'bg-transparent text-slate-400 border-white/5 hover:text-white hover:bg-white/5'
+                      ? 'bg-sepia/15 text-sepia border-sepia/40'
+                      : 'bg-transparent text-ink-soft hover:text-sepia hover:bg-vellum'
                   }`}
                   aria-pressed={activePreset === p.id}
                   aria-label={`Set time period to ${p.label}`}
@@ -232,27 +239,25 @@ const AccountDetails = memo(function AccountDetails({ email }) {
             {/* Custom Dates Inputs */}
             <div className="grid grid-cols-2 gap-3 mt-2">
               <div className="flex flex-col gap-1">
-                <label htmlFor="start-date" className="text-[10px] text-slate-400 font-medium">
+                <label htmlFor="start-date" className="text-[10px] text-ink-soft font-bold uppercase tracking-widest">
                   Start Date
                 </label>
                 <input
                   id="start-date"
                   type="date"
-                  value={startDate}
-                  onChange={(e) => handleDateChange('start', e.target.value)}
-                  className="bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs md:text-sm text-slate-200 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 [color-scheme:dark]"
+                  {...register('startDate', { onChange: () => setActivePreset('custom') })}
+                  className="input-vintage text-xs md:text-sm"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label htmlFor="end-date" className="text-[10px] text-slate-400 font-medium">
+                <label htmlFor="end-date" className="text-[10px] text-ink-soft font-bold uppercase tracking-widest">
                   End Date
                 </label>
                 <input
                   id="end-date"
                   type="date"
-                  value={endDate}
-                  onChange={(e) => handleDateChange('end', e.target.value)}
-                  className="bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs md:text-sm text-slate-200 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 [color-scheme:dark]"
+                  {...register('endDate', { onChange: () => setActivePreset('custom') })}
+                  className="input-vintage text-xs md:text-sm"
                 />
               </div>
             </div>
@@ -260,44 +265,46 @@ const AccountDetails = memo(function AccountDetails({ email }) {
 
           {/* Mode parameters */}
           <div className="flex flex-col gap-2.5">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            <label className="eyebrow flex items-center gap-1.5">
               <IoAnalyticsOutline size={14} /> Output Format
             </label>
             <div className="grid grid-cols-2 gap-3" role="group" aria-label="Output format">
               {/* Feedback Button */}
               <button
-                onClick={() => setMode('feedback')}
-                className={`flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                type="button"
+                onClick={() => setValue('mode', 'feedback')}
+                className={`flex flex-col items-start gap-1 p-3 rounded-md border text-left transition-all cursor-pointer ${
                   mode === 'feedback'
-                    ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/40'
-                    : 'bg-transparent text-slate-400 border-white/5 hover:text-white hover:bg-white/5'
+                    ? 'bg-sepia/10 text-sepia border-sepia/40'
+                    : 'bg-transparent text-ink-soft hover:text-sepia hover:bg-vellum'
                 }`}
                 aria-pressed={mode === 'feedback'}
                 aria-label="Select feedback-based analysis format"
               >
-                <span className="text-xs font-bold flex items-center gap-1">
+                <span className="text-xs font-bold flex items-center gap-1 font-body">
                   <IoAnalyticsOutline size={12} aria-hidden="true" /> Feedback-Based
                 </span>
-                <span className="text-[9px] text-slate-400 leading-normal">
+                <span className="text-[9px] text-ink-soft leading-normal">
                   Analytical habits, productivity metrics, and cognitive feedback.
                 </span>
               </button>
 
               {/* Story Button */}
               <button
-                onClick={() => setMode('story')}
-                className={`flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                type="button"
+                onClick={() => setValue('mode', 'story')}
+                className={`flex flex-col items-start gap-1 p-3 rounded-md border text-left transition-all cursor-pointer ${
                   mode === 'story'
-                    ? 'bg-purple-500/10 text-purple-300 border-purple-500/40'
-                    : 'bg-transparent text-slate-400 border-white/5 hover:text-white hover:bg-white/5'
+                    ? 'bg-teal/10 text-teal-deep border-teal/40'
+                    : 'bg-transparent text-ink-soft hover:text-teal-deep hover:bg-vellum'
                 }`}
                 aria-pressed={mode === 'story'}
                 aria-label="Select story format"
               >
-                <span className="text-xs font-bold flex items-center gap-1">
+                <span className="text-xs font-bold flex items-center gap-1 font-body">
                   <IoSparklesOutline size={12} aria-hidden="true" /> Story Form
                 </span>
-                <span className="text-[9px] text-slate-400 leading-normal">
+                <span className="text-[9px] text-ink-soft leading-normal">
                   Turn journal timelines into structured daily narrative stories.
                 </span>
               </button>
@@ -306,18 +313,17 @@ const AccountDetails = memo(function AccountDetails({ email }) {
 
           {/* Length parameters */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              Length of Output
-            </label>
+            <label className="eyebrow">Length of Output</label>
             <div className="grid grid-cols-3 gap-2 mt-1" role="group" aria-label="Output length">
               {['short', 'medium', 'long'].map((l) => (
                 <button
+                  type="button"
                   key={l}
-                  onClick={() => setLength(l)}
-                  className={`text-xs font-semibold py-2 rounded-xl transition-all border capitalize cursor-pointer ${
+                  onClick={() => setValue('length', l)}
+                  className={`text-xs font-bold py-2 rounded-md transition-all border capitalize cursor-pointer font-body ${
                     length === l
-                      ? 'bg-white/10 text-white border-white/30'
-                      : 'bg-transparent text-slate-400 border-white/5 hover:text-white hover:bg-white/5'
+                      ? 'bg-ink text-parchment border-ink'
+                      : 'bg-transparent text-ink-soft hover:text-ink hover:bg-vellum'
                   }`}
                   aria-pressed={length === l}
                   aria-label={`Set output length to ${l}`}
@@ -330,33 +336,32 @@ const AccountDetails = memo(function AccountDetails({ email }) {
 
           {/* Theme parameters */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="focus-theme" className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <label htmlFor="focus-theme" className="eyebrow">
               One-liner Focus Theme
             </label>
             <input
               id="focus-theme"
               type="text"
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
+              {...register('theme')}
               placeholder="e.g. Work stress, family ties, school exams, fitness..."
-              className="bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 text-xs md:text-sm"
+              className="input-vintage text-xs md:text-sm"
             />
-            <p className="text-[10px] text-slate-400">
+            <p className="text-[10px] text-ink-soft font-body">
               The AI will craft the story or analysis around this specific element of your life.
             </p>
           </div>
 
           {/* Generate Action */}
           <button
-            onClick={handleGenerate}
+            type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-md shadow-indigo-600/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm active:scale-[0.98]"
+            className="btn-vintage w-full cursor-pointer disabled:cursor-not-allowed text-xs md:text-sm"
             aria-label={loading ? 'Generating insights, please wait' : 'Generate lifestyle insights'}
           >
             {loading ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Reading Journals & Writing...
+                <div className="w-4 h-4 border-2 border-parchment/40 border-t-parchment rounded-full animate-spin" />
+                Reading Journals &amp; Writing...
               </>
             ) : (
               <>
@@ -365,18 +370,18 @@ const AccountDetails = memo(function AccountDetails({ email }) {
               </>
             )}
           </button>
-        </div>
+        </form>
 
         {/* Right Side: Analysis Output Display */}
         <div className="lg:col-span-7 flex flex-col h-full min-h-[400px]">
           {/* Unloaded State */}
           {!loading && !result && !errorMsg && (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white/5 border border-white/5 border-dashed rounded-3xl text-center backdrop-blur-sm min-h-[400px]">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-4">
-                <IoSparklesOutline size={24} className="opacity-80" />
+            <div className="flex-1 flex flex-col items-center justify-center p-8 card-vintage text-center min-h-[400px]">
+              <div className="w-12 h-12 rounded-md bg-sepia/10 text-sepia flex items-center justify-center mb-4">
+                <IoSparklesOutline size={24} />
               </div>
-              <h3 className="text-base md:text-lg font-bold text-white">Your Insights Will Appear Here</h3>
-              <p className="text-slate-400 text-xs md:text-sm mt-2 max-w-sm">
+              <h3 className="text-base md:text-lg font-bold text-ink font-display">Your Insights Will Appear Here</h3>
+              <p className="text-ink-soft font-body text-xs md:text-sm mt-2 max-w-sm">
                 Set your date range, pick story or feedback format, select your length and focus theme, and hit the generate button above!
               </p>
             </div>
@@ -384,39 +389,39 @@ const AccountDetails = memo(function AccountDetails({ email }) {
 
           {/* Loading Skeleton */}
           {loading && (
-            <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 flex flex-col gap-4 shadow-2xl min-h-[400px]">
-              <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                <div className="h-6 w-48 bg-slate-800 rounded-lg" />
-                <div className="h-5 w-24 bg-slate-800 rounded-lg" />
+            <div className="flex-1 card-vintage p-6 md:p-8 flex flex-col gap-4 min-h-[400px]">
+              <div className="flex items-center justify-between pb-4 border-b border-sepia/15">
+                <div className="h-6 w-48 bg-vellum rounded-md" />
+                <div className="h-5 w-24 bg-vellum rounded-md" />
               </div>
               <div className="space-y-3 mt-4">
-                <div className="h-4 w-full bg-slate-800 rounded" />
-                <div className="h-4 w-5/6 bg-slate-800 rounded" />
-                <div className="h-4 w-4/5 bg-slate-800 rounded" />
-                <div className="h-4 w-full bg-slate-800 rounded" />
-                <div className="h-4 w-3/4 bg-slate-800 rounded" />
+                <div className="h-4 w-full bg-vellum rounded" />
+                <div className="h-4 w-5/6 bg-vellum rounded" />
+                <div className="h-4 w-4/5 bg-vellum rounded" />
+                <div className="h-4 w-full bg-vellum rounded" />
+                <div className="h-4 w-3/4 bg-vellum rounded" />
               </div>
               <div className="space-y-3 mt-6">
-                <div className="h-4 w-full bg-slate-800 rounded" />
-                <div className="h-4 w-5/6 bg-slate-800 rounded" />
-                <div className="h-4 w-2/3 bg-slate-800 rounded" />
+                <div className="h-4 w-full bg-vellum rounded" />
+                <div className="h-4 w-5/6 bg-vellum rounded" />
+                <div className="h-4 w-2/3 bg-vellum rounded" />
               </div>
             </div>
           )}
 
           {/* Error Notice */}
           {errorMsg && (
-            <div className="flex-1 bg-red-950/20 border border-red-500/20 rounded-3xl p-6 flex flex-col items-center justify-center text-center gap-4 min-h-[400px]">
-              <div className="p-3 rounded-2xl bg-red-500/10 text-red-400">
+            <div className="flex-1 bg-brick/5 border border-brick/30 rounded-[10px] p-6 flex flex-col items-center justify-center text-center gap-4 min-h-[400px]">
+              <div className="p-3 rounded-md bg-brick/10 text-brick">
                 <IoInformationCircleOutline size={28} />
               </div>
-              <h3 className="text-base font-bold text-white">No Journals Found or Analysis Failed</h3>
-              <p className="text-red-300/80 text-xs md:text-sm max-w-md leading-relaxed">
+              <h3 className="text-base font-bold text-ink font-display">No Journals Found or Analysis Failed</h3>
+              <p className="text-brick text-xs md:text-sm max-w-md leading-relaxed font-body">
                 {errorMsg}
               </p>
-              <button 
+              <button
                 onClick={handleWriteEntry}
-                className="mt-2 text-xs md:text-sm font-semibold bg-white/10 hover:bg-white/15 text-white py-2 px-5 rounded-xl border border-white/10 transition-all cursor-pointer"
+                className="btn-outline mt-2 text-xs md:text-sm cursor-pointer"
                 aria-label="Go write a journal entry"
               >
                 Go write a journal entry
@@ -426,18 +431,18 @@ const AccountDetails = memo(function AccountDetails({ email }) {
 
           {/* Generated Result Output */}
           {result && (
-            <div className="flex-1 bg-gradient-to-b from-indigo-950/10 to-transparent border border-indigo-500/20 rounded-3xl flex flex-col shadow-2xl overflow-hidden min-h-[400px]">
+            <div className="flex-1 card-vintage flex flex-col overflow-hidden min-h-[400px]">
               {/* Output Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-sepia/15 bg-vellum">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+                  <div className="p-1.5 rounded-md bg-sepia/10 text-sepia">
                     {mode === 'feedback' ? <IoAnalyticsOutline size={16} /> : <IoSparklesOutline size={16} />}
                   </div>
                   <div>
-                    <h3 className="text-sm font-extrabold text-white">
+                    <h3 className="text-sm font-extrabold text-ink font-display">
                       {mode === 'feedback' ? 'AI Lifestyle Analysis' : 'Your Personal Life Story'}
                     </h3>
-                    <p className="text-[10px] text-slate-400 font-medium">
+                    <p className="text-[10px] text-ink-soft font-medium">
                       Based on {journalCount} journal {journalCount === 1 ? 'entry' : 'entries'}
                     </p>
                   </div>
@@ -446,12 +451,12 @@ const AccountDetails = memo(function AccountDetails({ email }) {
                 {/* Copy button */}
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-slate-300 hover:text-white transition-all text-xs font-semibold cursor-pointer"
+                  className="btn-outline px-3 py-1.5 text-xs cursor-pointer"
                   aria-label={copied ? 'Copied to clipboard' : 'Copy text to clipboard'}
                 >
                   {copied ? (
                     <>
-                      <IoCheckmarkOutline size={14} className="text-emerald-400" />
+                      <IoCheckmarkOutline size={14} className="text-sage" />
                       Copied!
                     </>
                   ) : (
@@ -464,7 +469,7 @@ const AccountDetails = memo(function AccountDetails({ email }) {
               </div>
 
               {/* Output Body */}
-              <div className="flex-grow p-6 overflow-y-auto max-h-[500px] custom-scrollbar bg-slate-950/45">
+              <div className="flex-grow p-6 overflow-y-auto max-h-[500px] bg-parchment">
                 {renderedOutput}
               </div>
             </div>

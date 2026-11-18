@@ -1,33 +1,57 @@
-import mongoose from "mongoose";
-import connectMongo from "@/lib/dbConfig";
-import { Journal } from "@/models/Journal";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextResponse } from "next/server";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  query,
+  where,
+  orderBy,
+} from "firebase/firestore";
 
-// GET /api/journals — list all journals for the current user
-export async function GET() {
+// Helper to normalize any Firestore timestamp or date string to ISO string
+function toIsoDate(val) {
+  if (!val) return new Date().toISOString();
+  if (typeof val === "string") return val;
+  if (val.toDate && typeof val.toDate === "function") return val.toDate().toISOString();
+  if (val instanceof Date) return val.toISOString();
+  return new Date(val).toISOString();
+}
+
+// GET /api/journals — list all journals sorted by date descending
+export async function GET(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId") || req.headers.get("x-user-id");
+
+    const journalsRef = collection(db, "journals");
+    let q;
+
+    if (userId) {
+      q = query(journalsRef, where("userId", "==", userId));
+    } else {
+      q = query(journalsRef);
     }
 
-    await connectMongo();
+    const snap = await getDocs(q);
 
-    const journals = await Journal.aggregate([
-      { $match: { userId: session.user.id } },
-      { $sort: { date: -1 } },
-      {
-        $project: {
-          title: 1,
-          date: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          plainText: { $substrCP: ["$plainText", 0, 150] }
-        }
-      }
-    ]);
+    const journals = [];
+    snap.forEach((doc) => {
+      const data = doc.data();
+      journals.push({
+        _id: doc.id,
+        id: doc.id,
+        title: data.title || "Untitled Entry",
+        date: toIsoDate(data.date),
+        createdAt: toIsoDate(data.createdAt),
+        updatedAt: toIsoDate(data.updatedAt),
+        plainText: (data.plainText || "").slice(0, 150),
+        userId: data.userId || null,
+      });
+    });
+
+    // Sort by date descending in JavaScript to prevent missing Firestore composite index requirements
+    journals.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return NextResponse.json({ journals }, { status: 200 });
   } catch (error) {
@@ -36,31 +60,39 @@ export async function GET() {
   }
 }
 
-// POST /api/journals — create a new journal
+// POST /api/journals — create a new journal entry
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { title, content, plainText, date } = await req.json();
+    const { title, content, plainText, date, userId } = await req.json();
 
     if (!content || !date) {
-      return NextResponse.json({ error: "Content and date are required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Content and date are required" },
+        { status: 400 }
+      );
     }
 
-    await connectMongo();
-
-    // Check if a journal already exists for this date
-    const startOfDay = new Date(date);
+    const targetDate = new Date(date);
+    const startOfDay = new Date(targetDate);
     startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
+    const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const existing = await Journal.findOne({
-      userId: session.user.id,
-      date: { $gte: startOfDay, $lte: endOfDay },
+    const startIso = startOfDay.toISOString();
+    const endIso = endOfDay.toISOString();
+
+    const journalsRef = collection(db, "journals");
+
+    // Fetch journals to check for same-day duplication
+    const snap = await getDocs(journalsRef);
+    const existing = snap.docs.find((doc) => {
+      const d = doc.data();
+      const docDate = toIsoDate(d.date);
+      const isSameDate = docDate >= startIso && docDate <= endIso;
+      if (userId && d.userId) {
+        return isSameDate && d.userId === userId;
+      }
+      return isSameDate;
     });
 
     if (existing) {
@@ -70,13 +102,24 @@ export async function POST(req) {
       );
     }
 
-    const journal = await Journal.create({
-      userId: session.user.id,
+    const now = new Date().toISOString();
+    const newJournalData = {
       title: title || "Untitled Entry",
       content,
       plainText: plainText || "",
-      date: startOfDay,
-    });
+      date: startIso,
+      userId: userId || null,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const docRef = await addDoc(journalsRef, newJournalData);
+
+    const journal = {
+      _id: docRef.id,
+      id: docRef.id,
+      ...newJournalData,
+    };
 
     return NextResponse.json({ journal }, { status: 201 });
   } catch (error) {

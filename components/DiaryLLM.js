@@ -6,8 +6,7 @@ import Underline from '@tiptap/extension-underline'
 import Placeholder from '@tiptap/extension-placeholder'
 import TextAlign from '@tiptap/extension-text-align'
 import Highlight from '@tiptap/extension-highlight'
-import { useState, useEffect, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
+import { useState, useCallback } from 'react'
 import {
   invalidateJournalCache,
   getCachedJournal,
@@ -15,10 +14,12 @@ import {
 } from '@/lib/journalCache'
 import PreviousJournals from './PreviousJournals'
 import { useData } from '@/lib/DataContext'
+import { useAuth } from '@/lib/AuthContext'
 
 export default function DiaryLLM() {
-  const { data: session } = useSession()
   const { setOptimisticJournal } = useData()
+  const { user } = useAuth()
+  const cacheUser = user?.uid || 'local'
   const [title, setTitle] = useState('')
   const [selectedDate, setSelectedDate] = useState(() => {
     const now = new Date()
@@ -103,7 +104,7 @@ export default function DiaryLLM() {
 
   // Save / Update
   const handleSave = async () => {
-    if (!editor || !session?.user?.id) return
+    if (!editor) return
 
     const content = editor.getHTML()
     const plainText = editor.getText()
@@ -129,8 +130,8 @@ export default function DiaryLLM() {
       const method = editingId ? 'PUT' : 'POST'
 
       const body = editingId
-        ? { title: title || 'Untitled Entry', content, plainText }
-        : { title: title || 'Untitled Entry', content, plainText, date: selectedDate }
+        ? { title: title || 'Untitled Entry', content, plainText, userId: user?.uid }
+        : { title: title || 'Untitled Entry', content, plainText, date: selectedDate, userId: user?.uid }
 
       const res = await fetch(url, {
         method,
@@ -142,7 +143,7 @@ export default function DiaryLLM() {
 
       if (res.ok) {
         setSaveStatus('saved')
-        invalidateJournalCache(session.user.id, editingId)
+        invalidateJournalCache(cacheUser, editingId)
         if (data.journal) {
           setCachedJournal(data.journal._id, data.journal)
           setEditingId(data.journal._id)
@@ -153,7 +154,7 @@ export default function DiaryLLM() {
         fetch('/api/goals/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ date: selectedDate }),
+          body: JSON.stringify({ date: selectedDate, userId: user?.uid }),
         }).then(() => {
           setOptimisticJournal(null)
           // Notify DataContext to force-refresh all caches
@@ -178,8 +179,8 @@ export default function DiaryLLM() {
 
   if (!editorReady || !editor) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-950">
-        <div className="w-6 h-6 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+      <div className="flex-1 flex items-center justify-center bg-paper">
+        <div className="w-6 h-6 border-2 border-sepia/30 border-t-sepia rounded-full animate-spin" />
       </div>
     )
   }
@@ -189,7 +190,7 @@ export default function DiaryLLM() {
       {/* ===== EDITOR PANEL ===== */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header bar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-4 border-b border-white/5 bg-gray-950/80">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-4 border-b border-sepia/15 bg-parchment">
           <div className="flex items-center gap-3 flex-1 min-w-0 w-full sm:w-auto">
             <label htmlFor="journal-title" className="sr-only">
               Journal entry title
@@ -200,7 +201,7 @@ export default function DiaryLLM() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Untitled Entry"
-              className="flex-1 bg-transparent text-xl font-semibold text-white placeholder:text-slate-400 focus:outline-none truncate"
+              className="flex-1 bg-transparent text-xl font-bold text-ink placeholder:text-ink-faint focus:outline-none truncate font-display"
             />
           </div>
           <div className="flex items-center gap-3 shrink-0">
@@ -214,12 +215,12 @@ export default function DiaryLLM() {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-slate-800/60 border border-slate-700 text-slate-300 text-sm px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500/50 [color-scheme:dark]"
+                  className="input-vintage text-sm"
                 />
               </div>
             )}
             {editingId && (
-              <span className="text-sm text-slate-400 italic">
+              <span className="text-sm text-ink-soft italic font-body">
                 {new Date(selectedDate).toLocaleDateString('en-US', {
                   weekday: 'short',
                   year: 'numeric',
@@ -235,15 +236,15 @@ export default function DiaryLLM() {
         <EditorToolbar editor={editor} />
 
         {/* Editor area */}
-        <div className="h-[50%] overflow-y-auto h-30 px-5 py-4 rounded-lg border-2 border-gray-800 bg-black m-5">
+        <div className="overflow-y-auto px-5 py-4 rounded-xl bg-parchment m-5 ruled-paper flex-1 min-h-[240px] shadow-[inset_0_2px_8px_rgba(74,49,32,0.08)]">
           <EditorContent editor={editor} className="h-full" rows={10} />
         </div>
 
         {/* Bottom bar: Save */}
-        <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-white/5 bg-gray-950/80">
+        <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-sepia/15 bg-parchment">
           <div className="flex items-center gap-2 min-w-0">
             {saveStatus === 'saved' && (
-              <span className="text-emerald-400 text-sm flex items-center gap-1.5 animate-fade-in">
+              <span className="text-sage-deep text-sm flex items-center gap-1.5 animate-fade-in font-body">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
@@ -251,20 +252,20 @@ export default function DiaryLLM() {
               </span>
             )}
             {saveStatus === 'empty' && (
-              <span className="text-amber-300 text-sm">Write something before saving.</span>
+              <span className="text-ochre-deep text-sm font-body">Write something before saving.</span>
             )}
             {saveStatus && saveStatus !== 'saved' && saveStatus !== 'empty' && saveStatus !== 'error' && (
-              <span className="text-rose-300 text-sm">{saveStatus}</span>
+              <span className="text-brick text-sm font-body">{saveStatus}</span>
             )}
             {saveStatus === 'error' && (
-              <span className="text-rose-300 text-sm">Failed to save. Try again.</span>
+              <span className="text-brick text-sm font-body">Failed to save. Try again.</span>
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {editingId && (
               <button
                 onClick={resetEditor}
-                className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded-lg transition-all border border-slate-700/50"
+                className="btn-outline px-4 py-2 text-sm cursor-pointer"
               >
                 + New Entry
               </button>
@@ -272,11 +273,11 @@ export default function DiaryLLM() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-5 py-2 text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+              className="btn-vintage px-5 py-2 text-sm cursor-pointer disabled:cursor-not-allowed"
             >
               {saving ? (
                 <>
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-3.5 h-3.5 border-2 border-parchment/40 border-t-parchment rounded-full animate-spin" />
                   Saving…
                 </>
               ) : editingId ? (
@@ -305,15 +306,15 @@ function EditorToolbar({ editor }) {
   if (!editor) return null
 
   const btnClass = (active) =>
-    `p-2 rounded-lg text-sm transition-all ${active
-      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-      : 'text-slate-300 hover:text-white hover:bg-white/5 border border-transparent'
+    `p-2 rounded-md text-sm transition-all cursor-pointer ${active
+      ? 'bg-sepia/15 text-sepia border border-sepia/40'
+      : 'text-ink-soft hover:text-sepia hover:bg-vellum border border-transparent'
     }`
 
-  const divider = <div className="w-px h-5 bg-white/20 mx-0.5" />
+  const divider = <div className="w-px h-5 bg-sepia/20 mx-0.5" />
 
   return (
-    <div className="flex items-center gap-1 px-4 py-2 border-b border-white/5 bg-gray-900/50 flex-wrap">
+    <div className="flex items-center gap-1 px-4 py-2 border-b border-sepia/15 bg-vellum flex-wrap">
       {/* Text style */}
       <button
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -356,7 +357,7 @@ function EditorToolbar({ editor }) {
         </svg>
       </button>
       <button
-        onClick={() => editor.chain().focus().toggleHighlight({ color: '#fbbf24' }).run()}
+        onClick={() => editor.chain().focus().toggleHighlight({ color: '#c08a2e' }).run()}
         className={btnClass(editor.isActive('highlight'))}
         aria-label="Highlight"
         title="Highlight"

@@ -1,10 +1,12 @@
-import connectMongo from "@/lib/dbConfig";
-import { Goal } from "@/models/Goal";
-import { Journal } from "@/models/Journal";
-import { DayStatus } from "@/models/DayStatus";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextResponse } from "next/server";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  setDoc,
+} from "firebase/firestore";
 
 function formatDateStr(date) {
   const y = date.getFullYear();
@@ -13,9 +15,17 @@ function formatDateStr(date) {
   return `${y}-${m}-${d}`;
 }
 
+function toIsoDate(val) {
+  if (!val) return new Date().toISOString();
+  if (typeof val === "string") return val;
+  if (val.toDate && typeof val.toDate === "function") return val.toDate().toISOString();
+  if (val instanceof Date) return val.toISOString();
+  return new Date(val).toISOString();
+}
+
 /**
  * Returns true if the goal applies to this specific date/period.
- * Mirrors the exact same logic used by GoalCalendar on the frontend.
+ * Mirrors the exact logic used by GoalCalendar on the frontend.
  */
 function isGoalApplicableForDate(goal, dateStr, weekStartStr, monthStartStr) {
   const goalStart = new Date(goal.startDate);
@@ -60,26 +70,35 @@ function isGoalMentionedInJournal(goalTitle, combinedText) {
 
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { date } = await req.json(); // YYYY-MM-DD
+    const { date, userId } = await req.json(); // YYYY-MM-DD
     if (!date) {
       return NextResponse.json({ error: "Date is required" }, { status: 400 });
     }
-
-    await connectMongo();
 
     // --- 1. Get journals for this date ---
     const [y, m, d] = date.split("-").map(Number);
     const startOfDay = new Date(y, m - 1, d, 0, 0, 0, 0);
     const endOfDay = new Date(y, m - 1, d, 23, 59, 59, 999);
 
-    const journals = await Journal.find({
-      userId: session.user.id,
-      date: { $gte: startOfDay, $lte: endOfDay },
+    const startIso = startOfDay.toISOString();
+    const endIso = endOfDay.toISOString();
+
+    const journalsSnap = await getDocs(collection(db, "journals"));
+    const journals = [];
+
+    journalsSnap.forEach((docSnap) => {
+      const data = docSnap.data();
+      const docDate = toIsoDate(data.date);
+      if (docDate >= startIso && docDate <= endIso) {
+        if (!userId || !data.userId || data.userId === userId) {
+          journals.push({
+            id: docSnap.id,
+            title: data.title || "",
+            plainText: data.plainText || "",
+            content: data.content || "",
+          });
+        }
+      }
     });
 
     if (journals.length === 0) {
@@ -91,14 +110,26 @@ export async function POST(req) {
 
     // --- 2. Fetch all active goals ---
     const dateObj = new Date(date + "T00:00:00");
-    const allGoals = await Goal.find({
-      userId: session.user.id,
-      startDate: { $lte: dateObj },
-      $or: [
-        { endDate: { $exists: false } },
-        { endDate: null },
-        { endDate: { $gte: dateObj } },
-      ],
+    const goalsSnap = await getDocs(collection(db, "goals"));
+    const allGoals = [];
+
+    goalsSnap.forEach((docSnap) => {
+      const data = docSnap.data();
+      const goalStart = new Date(toIsoDate(data.startDate));
+      const goalEnd = data.endDate ? new Date(toIsoDate(data.endDate)) : null;
+
+      if (goalStart <= dateObj && (!goalEnd || goalEnd >= dateObj)) {
+        if (!userId || !data.userId || data.userId === userId) {
+          allGoals.push({
+            id: docSnap.id,
+            _id: docSnap.id,
+            title: data.title,
+            frequency: data.frequency || "daily",
+            startDate: toIsoDate(data.startDate),
+            completedDates: Array.isArray(data.completedDates) ? [...data.completedDates] : [],
+          });
+        }
+      }
     });
 
     if (allGoals.length === 0) {
@@ -125,32 +156,35 @@ export async function POST(req) {
       return NextResponse.json({ success: true, status: "none" }, { status: 200 });
     }
 
-    // --- 4. Text-match: update completedDates for each period goal ---
+    // --- 4. Text-match: update completedDates for each period goal in Firestore ---
     const combinedText = journals
-      .map((j) => `${j.title || ""} ${j.plainText || ""}`)
+      .map((j) => `${j.title} ${j.plainText}`)
       .join(" ");
 
     const goalUpdates = [];
+    const now = new Date().toISOString();
+
     for (const goal of periodGoals) {
       const mentioned = isGoalMentionedInJournal(goal.title, combinedText);
+      let updatedDates = [...goal.completedDates];
+
       if (mentioned) {
-        goalUpdates.push(
-          Goal.updateOne(
-            { _id: goal._id, completedDates: { $ne: date } },
-            { $addToSet: { completedDates: date } }
-          )
-        );
-        // Mark it locally so we don't need to re-fetch
-        if (!goal.completedDates.includes(date)) {
-          goal.completedDates.push(date);
+        if (!updatedDates.includes(date)) {
+          updatedDates.push(date);
         }
       } else {
-        goalUpdates.push(
-          Goal.updateOne({ _id: goal._id }, { $pull: { completedDates: date } })
-        );
-        goal.completedDates = goal.completedDates.filter((cd) => !cd.startsWith(date));
+        updatedDates = updatedDates.filter((cd) => !cd.startsWith(date));
       }
+
+      goal.completedDates = updatedDates;
+      goalUpdates.push(
+        updateDoc(doc(db, "goals", goal.id), {
+          completedDates: updatedDates,
+          updatedAt: now,
+        })
+      );
     }
+
     await Promise.all(goalUpdates);
 
     // --- 5. Count how many period goals are now completed for this date ---
@@ -169,10 +203,16 @@ export async function POST(req) {
       finalStatus = "red";
     }
 
-    await DayStatus.findOneAndUpdate(
-      { userId: session.user.id, date },
-      { status: finalStatus },
-      { upsert: true, new: true }
+    const docId = userId ? `${userId}_${date}` : date;
+    await setDoc(
+      doc(db, "dayStatuses", docId),
+      {
+        date,
+        status: finalStatus,
+        userId: userId || null,
+        updatedAt: now,
+      },
+      { merge: true }
     );
 
     return NextResponse.json(
